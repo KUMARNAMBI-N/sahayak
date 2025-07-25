@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Navigation } from "@/components/navigation"
 import { getLibraryItems, deleteLibraryItem } from "@/lib/firestore"
 import { LoadingSpinner } from "@/components/loading-states"
+import { auth } from "@/lib/firebase"
 
 interface LibraryItem {
   id: string
@@ -160,7 +161,17 @@ export default function HistoryPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <Navigation />
+      <Navigation
+        user={
+          auth.currentUser
+            ? {
+                name: auth.currentUser.displayName || "",
+                email: auth.currentUser.email || "",
+                avatar: auth.currentUser.photoURL || undefined,
+              }
+            : undefined
+        }
+      />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">

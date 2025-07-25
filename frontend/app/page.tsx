@@ -14,7 +14,7 @@ const slides = [
     subtitle: "Create engaging local stories and culturally relevant content",
     description:
       "Generate stories in regional languages that connect with your students' cultural background and make learning more meaningful.",
-    image: "/placeholder.svg?height=400&width=600&text=AI+Story+Generation",
+    image: "/Untitled design (5).jpg?height=300&width=600&text=AI+Story+Generation",
     cta: "Generate Stories",
     ctaLink: "/get-started",
     bgColor: "from-blue-600 to-indigo-700",
@@ -25,7 +25,7 @@ const slides = [
     subtitle: "Upload textbook images, get instant worksheets",
     description:
       "Simply upload a textbook page and our AI creates customized worksheets for multiple grade levels automatically.",
-    image: "/placeholder.svg?height=400&width=600&text=Multigrade+Worksheets",
+    image: "/Untitled design (2).jpg?height=400&width=600&text=Multigrade+Worksheets",
     cta: "Create Worksheets",
     ctaLink: "/get-started",
     bgColor: "from-green-600 to-emerald-700",
@@ -36,7 +36,7 @@ const slides = [
     subtitle: "Generate diagrams and visual aids instantly",
     description:
       "Create educational diagrams and visual aids that help students understand complex concepts through visual representation.",
-    image: "/placeholder.svg?height=400&width=600&text=Visual+Learning",
+    image: "/Untitled design (3).jpg?height=400&width=600&text=Visual+Learning",
     cta: "Create Visuals",
     ctaLink: "/get-started",
     bgColor: "from-purple-600 to-pink-700",
@@ -47,7 +47,7 @@ const slides = [
     subtitle: "Instant feedback for student reading skills",
     description:
       "Record student reading sessions and get detailed analysis with personalized feedback and improvement suggestions.",
-    image: "/placeholder.svg?height=400&width=600&text=Reading+Assessment",
+    image: "/Untitled design (1).jpg?height=400&width=600&text=Reading+Assessment",
     cta: "Try Assessment",
     ctaLink: "/get-started",
     bgColor: "from-orange-600 to-red-700",

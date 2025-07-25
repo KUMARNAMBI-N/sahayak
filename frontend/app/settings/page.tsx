@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { FontSizeSelector } from "@/components/font-size-selector"
+import { auth } from "@/lib/firebase";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState({
@@ -137,7 +138,17 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <Navigation />
+      <Navigation
+        user={
+          auth.currentUser
+            ? {
+                name: auth.currentUser.displayName || "",
+                email: auth.currentUser.email || "",
+                avatar: auth.currentUser.photoURL || undefined,
+              }
+            : undefined
+        }
+      />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with Font Size Selector */}
