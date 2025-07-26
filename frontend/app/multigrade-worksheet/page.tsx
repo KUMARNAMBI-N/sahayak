@@ -240,8 +240,16 @@ export default function MultigradeWorksheetPage() {
       const gradeLabel = grades.find((grade) => grade.value === selectedGrade)?.label
       const subjectLabel = subjects.find((subject) => subject.value === selectedSubject)?.label
       const user = auth.currentUser;
-      const userId = user ? user.uid : "";
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to save your worksheet.",
+          variant: "destructive",
+        });
+        return;
+      }
 
+      const token = await user.getIdToken();
       await multigradeWorksheetAPI.create({
         title: `${gradeLabel} ${subjectLabel} Worksheet`,
         worksheetData: {
@@ -254,7 +262,7 @@ export default function MultigradeWorksheetPage() {
           hasUploadedFiles: uploadedFiles.length > 0,
           extractedFromFiles: uploadedFiles.map((f) => f.name),
         },
-        userId,
+        userId: user.uid,
       })
 
       toast({
@@ -262,6 +270,7 @@ export default function MultigradeWorksheetPage() {
         description: "The worksheet has been saved to your library.",
       })
     } catch (error) {
+      console.error('Error saving worksheet:', error);
       toast({
         title: "Save failed",
         description: "Failed to save worksheet. Please try again.",

@@ -101,7 +101,16 @@ export default function VisualAidPage() {
     setIsSaving(true)
     try {
       const user = auth.currentUser;
-      const userId = user ? user.uid : "";
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to save your visual aid.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const token = await user.getIdToken();
       await visualAidAPI.create({
         title: `Visual Aid: ${topic}`,
         aidData: {
@@ -110,7 +119,7 @@ export default function VisualAidPage() {
           imageUrl: generatedImageUrl,
           visualType: "diagram",
         },
-        userId,
+        userId: user.uid,
       })
 
       toast({
@@ -118,6 +127,7 @@ export default function VisualAidPage() {
         description: "The visual aid has been saved to your library.",
       })
     } catch (error) {
+      console.error('Error saving visual aid:', error);
       toast({
         title: "Save failed",
         description: "Failed to save visual aid. Please try again.",

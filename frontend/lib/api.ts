@@ -1,6 +1,7 @@
 import { auth } from './firebase';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Use relative URLs since Next.js rewrites handle the proxy
+const API_BASE_URL = '/api';
 
 // Helper function to get auth token
 const getAuthToken = async () => {
@@ -15,25 +16,37 @@ const getAuthToken = async () => {
   return null;
 };
 
-// Helper function for API calls
+// Helper function for API calls with better error handling
 const apiCall = async (endpoint: string, options: RequestInit = {}) => {
-  const token = await getAuthToken();
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
-    ...options.headers,
-  };
+  try {
+    const token = await getAuthToken();
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+      ...options.headers,
+    };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
 
-  if (!response.ok) {
-    throw new Error(`API call failed: ${response.statusText}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API call failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    // Handle empty responses
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return response.json();
+    } else {
+      return response.text();
+    }
+  } catch (error) {
+    console.error(`API call error for ${endpoint}:`, error);
+    throw error;
   }
-
-  return response.json();
 };
 
 // Generate Story APIs

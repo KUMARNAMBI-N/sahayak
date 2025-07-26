@@ -269,3 +269,100 @@ export async function analyzeReadingWithLanguage(transcript: string, language: s
     throw new Error("Failed to analyze reading. Please check your API key and try again.")
   }
 }
+
+export async function generateLessonPlan(topic: string, grade: string, subject: string, duration: string) {
+  try {
+    const genAI = getGeminiAI()
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+
+    const prompt = `Create a comprehensive lesson plan for Indian school curriculum:
+
+    Topic: ${topic}
+    Grade: ${grade}
+    Subject: ${subject}
+    Duration: ${duration}
+    
+    Please provide a detailed lesson plan in the following JSON format:
+    {
+      "title": "Lesson Title",
+      "grade": "${grade}",
+      "subject": "${subject}",
+      "duration": "${duration}",
+      "learningObjectives": [
+        "Objective 1",
+        "Objective 2",
+        "Objective 3"
+      ],
+      "prerequisites": [
+        "What students should know before this lesson"
+      ],
+      "materials": [
+        "Required materials and resources"
+      ],
+      "lessonStructure": [
+        {
+          "day": 1,
+          "title": "Day 1 Title",
+          "duration": "45 minutes",
+          "activities": [
+            {
+              "type": "Introduction/Activity/Assessment",
+              "description": "Detailed description of the activity",
+              "time": "10 minutes",
+              "materials": ["materials needed"],
+              "instructions": "Step-by-step instructions"
+            }
+          ],
+          "learningOutcomes": ["What students will learn today"]
+        }
+      ],
+      "assessment": {
+        "formative": [
+          "Formative assessment methods"
+        ],
+        "summative": [
+          "Summative assessment methods"
+        ],
+        "rubrics": [
+          "Assessment criteria"
+        ]
+      },
+      "differentiation": {
+        "forStrugglingStudents": [
+          "Support strategies for struggling students"
+        ],
+        "forAdvancedStudents": [
+          "Extension activities for advanced students"
+        ]
+      },
+      "homework": [
+        "Homework assignments"
+      ],
+      "resources": [
+        "Additional resources and references"
+      ],
+      "notes": [
+        "Important notes for teachers"
+      ]
+    }
+    
+    Requirements:
+    - Make it suitable for Indian education system
+    - Include hands-on activities and practical examples
+    - Consider the grade level appropriateness
+    - Include assessment strategies
+    - Provide differentiation strategies
+    - Make it engaging and interactive
+    - Include real-world connections
+    - Consider cultural context
+    - Provide clear learning objectives
+    - Include time management for each activity`
+
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    return safeJSONParse(response.text())
+  } catch (error) {
+    console.error("Error generating lesson plan:", error)
+    throw new Error("Failed to generate lesson plan. Please check your API key and try again.")
+  }
+}

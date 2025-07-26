@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { lessonPlannerAPI } from "@/lib/api";
 import { Navigation } from "@/components/navigation";
 import { auth } from "@/lib/firebase";
+import { generateLessonPlan } from "@/lib/gemini";
 
 const grades = [
   { value: "1", label: "Grade 1" },
@@ -33,6 +34,8 @@ const grades = [
   { value: "6", label: "Grade 6" },
   { value: "7", label: "Grade 7" },
   { value: "8", label: "Grade 8" },
+  { value: "9", label: "Grade 9" },
+  { value: "10", label: "Grade 10" },
 ];
 
 const subjects = [
@@ -40,18 +43,34 @@ const subjects = [
   { value: "mathematics", label: "Mathematics" },
   { value: "english", label: "English" },
   { value: "hindi", label: "Hindi" },
+  { value: "social-studies", label: "Social Studies" },
+  { value: "environmental-science", label: "Environmental Science" },
+  { value: "computer-science", label: "Computer Science" },
+  { value: "physical-education", label: "Physical Education" },
+];
+
+const durations = [
+  { value: "1 day", label: "1 Day" },
+  { value: "2 days", label: "2 Days" },
+  { value: "3 days", label: "3 Days" },
+  { value: "5 days", label: "5 Days" },
+  { value: "1 week", label: "1 Week" },
+  { value: "2 weeks", label: "2 Weeks" },
 ];
 
 export default function LessonPlannerPage() {
   const { toast } = useToast();
   const [selectedGrade, setSelectedGrade] = useState("3");
   const [selectedSubject, setSelectedSubject] = useState("science");
+  const [selectedDuration, setSelectedDuration] = useState("5 days");
   const [topic, setTopic] = useState("");
-  const [duration, setDuration] = useState("5 days");
   const [lessonPlan, setLessonPlan] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Check if API key is available
+  const hasApiKey = !!process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 
   async function handleGenerate() {
     if (!topic.trim()) {
@@ -63,65 +82,40 @@ export default function LessonPlannerPage() {
       return;
     }
 
+    if (!hasApiKey) {
+      toast({
+        title: "API Key Required",
+        description: "Please add your Gemini API key to enable AI generation.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     setError("");
 
     try {
-      // For now, we'll create a mock lesson plan since the AI generation endpoint isn't set up yet
-      const mockLessonPlan = {
-        title: `${selectedSubject} - ${topic}`,
-        grade: selectedGrade,
-        duration: duration,
-        objectives: [
-          `Understand the basic concepts of ${topic}`,
-          `Apply knowledge through practical activities`,
-          `Demonstrate comprehension through assessment`
-        ],
-        activities: [
-          {
-            day: 1,
-            title: "Introduction",
-            description: `Introduce students to ${topic} through interactive discussion and visual aids.`
-          },
-          {
-            day: 2,
-            title: "Hands-on Learning",
-            description: `Engage students in practical activities related to ${topic}.`
-          },
-          {
-            day: 3,
-            title: "Group Work",
-            description: `Students work in groups to explore different aspects of ${topic}.`
-          },
-          {
-            day: 4,
-            title: "Assessment",
-            description: `Evaluate student understanding through quizzes and activities.`
-          },
-          {
-            day: 5,
-            title: "Review and Reflection",
-            description: `Review key concepts and allow students to reflect on their learning.`
-          }
-        ],
-        assessment: [
-          "Class participation and engagement",
-          "Group project completion",
-          "Individual quiz scores",
-          "Reflection journal entries"
-        ],
-        resources: [
-          "Textbook chapters",
-          "Online videos and simulations",
-          "Hands-on materials",
-          "Assessment tools"
-        ]
-      };
+      const generatedPlan = await generateLessonPlan(
+        topic,
+        selectedGrade,
+        selectedSubject,
+        selectedDuration
+      );
       
-      setLessonPlan(JSON.stringify(mockLessonPlan, null, 2));
+      setLessonPlan(JSON.stringify(generatedPlan, null, 2));
+      
+      toast({
+        title: "Lesson plan generated successfully!",
+        description: `Your ${selectedSubject} lesson plan for Grade ${selectedGrade} has been created.`,
+      });
     } catch (err) {
       console.error(err);
-      setError("Failed to generate lesson plan. Please try again.");
+      setError("Failed to generate lesson plan. Please check your API key and try again.");
+      toast({
+        title: "Generation failed",
+        description: "Failed to generate lesson plan. Please try again.",
+        variant: "destructive",
+      });
     }
 
     setIsLoading(false);
@@ -132,20 +126,30 @@ export default function LessonPlannerPage() {
     setIsSaving(true);
     try {
       const user = auth.currentUser;
-      const userId = user ? user.uid : "";
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to save your lesson plan.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const token = await user.getIdToken();
       await lessonPlannerAPI.create({
         title: topic || "Untitled Lesson Plan",
         plan: {
           subject: selectedSubject,
           grade: selectedGrade,
           topic,
+          duration: selectedDuration,
           lesson: lessonPlan,
         },
-        userId,
+        userId: user.uid,
       });
       toast({ title: "Saved successfully!" });
     } catch (err) {
-      console.error(err);
+      console.error('Error saving lesson plan:', err);
       toast({ title: "Save failed", variant: "destructive" });
     }
     setIsSaving(false);
@@ -158,7 +162,7 @@ export default function LessonPlannerPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#008080' }}>
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 to-blue-100">
       <Navigation user={auth.currentUser ? {
         name: auth.currentUser.displayName || '',
         email: auth.currentUser.email || '',
@@ -173,7 +177,7 @@ export default function LessonPlannerPage() {
             </CardTitle>
             <CardDescription className="dark:text-gray-300">
               Select grade & subject, enter a topic and duration, then generate
-              a ready‑to‑use lesson plan.
+              a ready‑to‑use lesson plan with AI assistance.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -216,12 +220,18 @@ export default function LessonPlannerPage() {
 
               <div className="space-y-2">
                 <Label>Duration</Label>
-                <input
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  placeholder="e.g. 5 days"
-                  className="border rounded-md p-2 w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                />
+                <Select value={selectedDuration} onValueChange={setSelectedDuration}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Duration" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {durations.map((d) => (
+                      <SelectItem key={d.value} value={d.value}>
+                        {d.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -230,7 +240,7 @@ export default function LessonPlannerPage() {
               <Label>Enter Topic</Label>
               <Textarea
                 rows={4}
-                placeholder="e.g. Water Cycle, Fractions, Photosynthesis..."
+                placeholder="e.g. Water Cycle, Fractions, Photosynthesis, Indian Independence Movement..."
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 className="resize-none dark:bg-gray-700 dark:border-gray-600 dark:text-white"
@@ -239,11 +249,23 @@ export default function LessonPlannerPage() {
 
             {/* Generate Button */}
             <div className="flex justify-start">
-              <Button onClick={handleGenerate} disabled={isLoading}>
+              <Button 
+                onClick={handleGenerate} 
+                disabled={isLoading || !hasApiKey}
+                className="bg-teal-600 hover:bg-teal-700 text-white border-teal-600"
+              >
                 {isLoading && <Loader2 className="animate-spin h-4 w-4 mr-2" />}
                 Generate Lesson Plan
               </Button>
             </div>
+
+            {/* API Key Warning */}
+            {!hasApiKey && (
+              <div className="bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300 p-4 rounded-md flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                <strong>AI Ready:</strong> Gemini API is configured and ready to generate lesson plans!
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -259,15 +281,18 @@ export default function LessonPlannerPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {error && (
-              <div className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200 p-4 rounded-md flex items-center gap-2">
+              <div className="bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300 p-4 rounded-md flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" /> {error}
               </div>
             )}
 
             {isLoading ? (
-              <p className="text-gray-500 dark:text-gray-400">
-                Generating lesson plan...
-              </p>
+              <div className="text-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-teal-600" />
+                <p className="text-gray-500 dark:text-gray-400">
+                  Generating your lesson plan with AI...
+                </p>
+              </div>
             ) : lessonPlan ? (
               <>
                 <div className="bg-white dark:bg-gray-700 p-6 rounded-lg max-h-96 overflow-y-auto border dark:border-gray-600 shadow-sm">
@@ -276,7 +301,11 @@ export default function LessonPlannerPage() {
                   </pre>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <Button variant="outline" onClick={handleCopy}>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCopy}
+                    className="border-teal-600 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
+                  >
                     <Copy className="h-4 w-4 mr-2" />
                     Copy
                   </Button>
@@ -284,6 +313,7 @@ export default function LessonPlannerPage() {
                     variant="outline"
                     onClick={handleSave}
                     disabled={isSaving}
+                    className="border-teal-600 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
                   >
                     {isSaving ? (
                       <>

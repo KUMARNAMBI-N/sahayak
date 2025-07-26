@@ -42,34 +42,6 @@ type Activity = {
 function useUserProfile(uid: string) {
   const [user, setUser] = useState({ name: "", email: "", avatar: "", uid: "" });
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
-  useEffect(() => {
-    if (!uid) return;
-    // Fetch profile
-    fetch(`http://localhost:5000/api/profile/${uid}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data) {
-          setUser({
-            name: data.fullName || "",
-            email: data.email || "",
-            avatar: data.avatar || "/placeholder.svg",
-            uid,
-          });
-        }
-      });
-    // Fetch recent activities
-    fetch(`http://localhost:5000/api/profile/${uid}/activities`)
-      .then(res => res.ok ? res.json() : [])
-      .then(activities => setRecentActivities(activities.slice(0, 5)));
-  }, [uid]);
-  return { ...user, recentActivities };
-}
-
-// Child component for authenticated dashboard content
-function DashboardContent({ uid, currentLanguage }: { uid: string, currentLanguage: Language }) {
-  const t = useTranslation(currentLanguage);
-  const { name, email, avatar, recentActivities } = useUserProfile(uid);
-  const user = { name, email, avatar };
   const [stats, setStats] = useState({
     storiesCreated: 0,
     worksheetsGenerated: 0,
@@ -78,15 +50,63 @@ function DashboardContent({ uid, currentLanguage }: { uid: string, currentLangua
     chatUsageSeconds: 0,
   });
 
-  // Fetch dashboard stats from backend
   useEffect(() => {
     if (!uid) return;
-    fetch(`http://localhost:5000/api/profile/${uid}/dashboard-stats`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data) setStats(data);
-      });
+
+    const fetchData = async () => {
+      try {
+        // Get auth token
+        const { auth } = await import('../../lib/firebase');
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
+        
+        const token = await currentUser.getIdToken();
+        const headers = {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        };
+
+        // Fetch profile
+        const profileRes = await fetch(`/api/profile/${uid}`, { headers });
+        if (profileRes.ok) {
+          const data = await profileRes.json();
+          setUser({
+            name: data.fullName || "",
+            email: data.email || "",
+            avatar: data.avatar || "/placeholder.svg",
+            uid,
+          });
+        }
+
+        // Fetch recent activities
+        const activitiesRes = await fetch(`/api/profile/${uid}/activities`, { headers });
+        if (activitiesRes.ok) {
+          const activities = await activitiesRes.json();
+          setRecentActivities(activities.slice(0, 5));
+        }
+
+        // Fetch dashboard stats
+        const statsRes = await fetch(`/api/profile/${uid}/dashboard-stats`, { headers });
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
+    };
+
+    fetchData();
   }, [uid]);
+
+  return { ...user, recentActivities, stats };
+}
+
+// Child component for authenticated dashboard content
+function DashboardContent({ uid, currentLanguage }: { uid: string, currentLanguage: Language }) {
+  const t = useTranslation(currentLanguage);
+  const { name, email, avatar, recentActivities, stats } = useUserProfile(uid);
+  const user = { name, email, avatar };
 
   // Load language preference and listen for changes
   useEffect(() => {
