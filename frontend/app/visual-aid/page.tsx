@@ -8,8 +8,9 @@ import { Label } from "@/components/ui/label"
 import { Copy, Download, Loader2, ImageIcon, AlertCircle, Heart, Sparkles, CheckCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Navigation } from "@/components/navigation"
+
 import { generateImagePrompt } from "@/lib/gemini"
-import { saveToLibrary } from "@/lib/firestore"
+import { visualAidAPI } from "@/lib/api";
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VisualAidGenerationLoader } from "@/components/loading-states"
 import { auth } from "@/lib/firebase";
@@ -62,17 +63,17 @@ export default function VisualAidPage() {
 
     try {
       // Generate image prompt using Gemini
-      const imagePrompt = await generateImagePrompt(topic)
-      setGeneratedDescription(imagePrompt)
+      const imagePrompt = await generateImagePrompt(topic);
+      setGeneratedDescription(imagePrompt);
 
       // Generate actual image (mock implementation)
-      const imageUrl = await generateImage(imagePrompt)
-      setGeneratedImageUrl(imageUrl)
+      const imageUrl = await generateImage(imagePrompt);
+      setGeneratedImageUrl(imageUrl);
 
       toast({
         title: "Visual aid generated successfully!",
         description: "Your educational diagram has been created.",
-      })
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to generate visual aid"
       setError(errorMessage)
@@ -101,11 +102,10 @@ export default function VisualAidPage() {
     try {
       const user = auth.currentUser;
       const userId = user ? user.uid : "";
-      await saveToLibrary({
-        type: "visual-aid",
+      await visualAidAPI.create({
         title: `Visual Aid: ${topic}`,
-        content: generatedDescription,
-        metadata: {
+        aidData: {
+          description: generatedDescription,
           topic: topic,
           imageUrl: generatedImageUrl,
           visualType: "diagram",

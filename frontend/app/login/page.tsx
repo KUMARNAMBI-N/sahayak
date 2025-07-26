@@ -13,6 +13,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { auth } from "@/lib/firebase";
+import Sayahak from "@/public/sahayak_logo.png";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 export default function LoginPage() {
@@ -82,8 +83,14 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-3">
-            <div className="bg-indigo-600 p-3 rounded-lg">
-              <Sparkles className="h-8 w-8 text-white" />
+            <div className="p-3 rounded-lg">
+              {/* <Sparkles className="h-8 w-8 text-white" /> */}
+              <img
+    src={Sayahak.src}
+    alt="Sahayak Logo"
+    className="h-10 w-10 object-contain"
+    style={{ minWidth: 40 }}
+  />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">SAHAYAK</h1>

@@ -24,9 +24,10 @@ import { useToast } from "@/hooks/use-toast"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { FontSizeSelector } from "@/components/font-size-selector"
-import { generateWorksheet } from "@/lib/gemini"
+
 import { extractTextFromImage, extractTextFromPDF } from "@/lib/ocr"
-import { saveToLibrary } from "@/lib/firestore"
+import { generateWorksheet } from "@/lib/gemini"
+import { multigradeWorksheetAPI } from "@/lib/api";
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { WorksheetGenerationLoader } from "@/components/loading-states"
 import { auth } from "@/lib/firebase";
@@ -202,12 +203,12 @@ export default function MultigradeWorksheetPage() {
     setGeneratedWorksheet("")
 
     try {
-      const worksheet = await generateWorksheet(finalContent, selectedGrade, selectedSubject)
-      setGeneratedWorksheet(worksheet)
+      const worksheet = await generateWorksheet(finalContent, selectedGrade, selectedSubject);
+      setGeneratedWorksheet(worksheet);
       toast({
         title: "Worksheet generated successfully!",
         description: `Grade ${selectedGrade} ${selectedSubject} worksheet has been created.`,
-      })
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to generate worksheet"
       setError(errorMessage)
@@ -239,11 +240,10 @@ export default function MultigradeWorksheetPage() {
       const user = auth.currentUser;
       const userId = user ? user.uid : "";
 
-      await saveToLibrary({
-        type: "worksheet",  
+      await multigradeWorksheetAPI.create({
         title: `${gradeLabel} ${subjectLabel} Worksheet`,
-        content: generatedWorksheet,
-        metadata: {
+        worksheetData: {
+          content: generatedWorksheet,
           grade: selectedGrade,
           gradeLabel,
           subject: selectedSubject,

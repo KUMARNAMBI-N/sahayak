@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast"
 import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-
+import Sayahak from "@/public/sahayak_logo.png";
 const steps = [
   { id: 1, title: "Account Details", description: "Basic information" },
   { id: 2, title: "Teaching Profile", description: "Your teaching background" },
@@ -254,11 +254,17 @@ export default function GetStartedPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-3">
-            <div className="bg-indigo-600 p-3 rounded-lg">
-              <Sparkles className="h-8 w-8 text-white" />
+            <div className="p-3 rounded-lg">
+              {/* <Sparkles className="h-8 w-8 text-white" /> */}
+              <img
+    src={Sayahak.src}
+    alt="Sahayak Logo"
+    className="h-10 w-10 object-contain"
+    style={{ minWidth: 40 }}
+  />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">SAHAYAK</h1>
+              <h1 className="text-2xl font-bold text-gray-800">SAHAYAK</h1>
               <p className="text-sm text-gray-600">AI Teaching Companion</p>
             </div>
           </Link>

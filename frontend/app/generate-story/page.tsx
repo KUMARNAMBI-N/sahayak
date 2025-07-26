@@ -11,8 +11,9 @@ import { useToast } from "@/hooks/use-toast"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { FontSizeSelector } from "@/components/font-size-selector"
+
 import { generateStory } from "@/lib/gemini"
-import { saveToLibrary } from "@/lib/firestore"
+import { generateStoryAPI } from "@/lib/api"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { StoryGenerationLoader } from "@/components/loading-states"
 import { auth } from "@/lib/firebase";
@@ -78,44 +79,35 @@ export default function GenerateStoryPage() {
         title: "Please enter a topic",
         description: "Enter a topic or question to generate a story.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
 
-    if (!hasApiKey) {
-      toast({
-        title: "API Key Required",
-        description: "Please add your Gemini API key to use AI generation.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsLoading(true)
-    setError("")
-    setGeneratedStory("")
+    setIsLoading(true);
+    setError("");
+    setGeneratedStory("");
 
     try {
-      const selectedLang = languages.find((lang) => lang.value === selectedLanguage)
-      const story = await generateStory(prompt, selectedLang?.nativeName || "Hindi")
+      const selectedLang = languages.find((lang) => lang.value === selectedLanguage);
+      const story = await generateStory(prompt, selectedLang?.nativeName || "Hindi");
 
-      setGeneratedStory(story)
+      setGeneratedStory(story);
       toast({
         title: "Story generated successfully!",
         description: `Your story has been created in ${selectedLang?.label}.`,
-      })
+      });
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to generate story"
-      setError(errorMessage)
+      const errorMessage = err instanceof Error ? err.message : "Failed to generate story";
+      setError(errorMessage);
       toast({
         title: "Generation failed",
         description: errorMessage,
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleCopyStory = () => {
     navigator.clipboard.writeText(generatedStory)
@@ -133,16 +125,9 @@ export default function GenerateStoryPage() {
       const selectedLang = languages.find((lang) => lang.value === selectedLanguage)
       const user = auth.currentUser;
       const userId = user ? user.uid : "";
-      await saveToLibrary({
-        type: "story",
+      await generateStoryAPI.create({
         title: `Story: ${prompt.slice(0, 50)}${prompt.length > 50 ? "..." : ""}`,
         content: generatedStory,
-        metadata: {
-          language: selectedLanguage,
-          languageLabel: selectedLang?.label,
-          prompt: prompt,
-          topic: prompt,
-        },
         userId,
       })
 

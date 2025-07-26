@@ -21,7 +21,7 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Navigation } from "@/components/navigation"
-import { getLibraryItems, deleteLibraryItem } from "@/lib/firestore"
+import { historyAPI, generateStoryAPI, multigradeWorksheetAPI, lessonPlannerAPI, visualAidAPI, readingAssessmentAPI } from "@/lib/api"
 import { LoadingSpinner } from "@/components/loading-states"
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -29,7 +29,7 @@ import { useRouter } from "next/navigation";
 
 interface LibraryItem {
   id: string
-  type: "story" | "worksheet" | "visual-aid" | "reading-assessment"
+  type: "story" | "worksheet" | "lesson-plan" | "visual-aid" | "reading-assessment"
   title: string
   content: string
   metadata: Record<string, any>
@@ -40,6 +40,7 @@ interface LibraryItem {
 const typeIcons = {
   story: BookOpen,
   worksheet: FileText,
+  "lesson-plan": Calendar,
   "visual-aid": ImageIcon,
   "reading-assessment": Mic,
 }
@@ -47,6 +48,7 @@ const typeIcons = {
 const typeColors = {
   story: "bg-green-100 text-green-800 border-green-200",
   worksheet: "bg-blue-100 text-blue-800 border-blue-200",
+  "lesson-plan": "bg-indigo-100 text-indigo-800 border-indigo-200",
   "visual-aid": "bg-purple-100 text-purple-800 border-purple-200",
   "reading-assessment": "bg-orange-100 text-orange-800 border-orange-200",
 }
@@ -54,6 +56,7 @@ const typeColors = {
 const typeLabels = {
   story: "Story",
   worksheet: "Worksheet",
+  "lesson-plan": "Lesson Plan",
   "visual-aid": "Visual Aid",
   "reading-assessment": "Reading Assessment",
 }
@@ -77,11 +80,8 @@ function HistoryContent({ uid }: { uid: string }) {
 
   const loadItems = async () => {
     try {
-      const userId = uid;
-      if (!userId) return;
-      const libraryItems = (await getLibraryItems(userId))
-        .filter(item => typeof item.id === "string" && item.id.length > 0) as LibraryItem[];
-      setItems(libraryItems);
+      const allItems = await historyAPI.getAllItems();
+      setItems(allItems);
     } catch (error) {
       toast({
         title: "Failed to load items",
@@ -111,9 +111,29 @@ function HistoryContent({ uid }: { uid: string }) {
     setFilteredItems(filtered)
   }
 
-  const handleDeleteItem = async (id: string) => {
+  const handleDeleteItem = async (id: string, type: string) => {
     try {
-      await deleteLibraryItem(id)
+      // Delete based on item type
+      switch (type) {
+        case 'story':
+          await generateStoryAPI.delete(id);
+          break;
+        case 'worksheet':
+          await multigradeWorksheetAPI.delete(id);
+          break;
+        case 'lesson-plan':
+          await lessonPlannerAPI.delete(id);
+          break;
+        case 'visual-aid':
+          await visualAidAPI.delete(id);
+          break;
+        case 'reading-assessment':
+          await readingAssessmentAPI.delete(id);
+          break;
+        default:
+          throw new Error('Unknown item type');
+      }
+      
       setItems((prev) => prev.filter((item) => item.id !== id))
       toast({
         title: "Item deleted",
@@ -207,6 +227,7 @@ function HistoryContent({ uid }: { uid: string }) {
                     <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="story">Stories</SelectItem>
                     <SelectItem value="worksheet">Worksheets</SelectItem>
+                    <SelectItem value="lesson-plan">Lesson Plans</SelectItem>
                     <SelectItem value="visual-aid">Visual Aids</SelectItem>
                     <SelectItem value="reading-assessment">Reading Assessments</SelectItem>
                   </SelectContent>
@@ -272,7 +293,7 @@ function HistoryContent({ uid }: { uid: string }) {
                             <Button variant="outline" size="sm" onClick={() => handleDownloadItem(item)}>
                               <Download className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => handleDeleteItem(item.id)}>
+                            <Button variant="outline" size="sm" onClick={() => handleDeleteItem(item.id, item.type)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -332,7 +353,7 @@ function HistoryContent({ uid }: { uid: string }) {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDeleteItem(selectedItem.id)}
+                        onClick={() => handleDeleteItem(selectedItem.id, selectedItem.type)}
                         className="flex-1"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />

@@ -19,6 +19,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react"
+import Sayahak from "@/public/sahayak_logo.png";
 import Link from "next/link"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
@@ -42,34 +43,6 @@ type Activity = {
 function useUserProfile(uid: string) {
   const [user, setUser] = useState({ name: "", email: "", avatar: "", uid: "" });
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
-  useEffect(() => {
-    if (!uid) return;
-    // Fetch profile
-    fetch(`http://localhost:5000/api/profile/${uid}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data) {
-          setUser({
-            name: data.fullName || "",
-            email: data.email || "",
-            avatar: data.avatar || "/placeholder.svg",
-            uid,
-          });
-        }
-      });
-    // Fetch recent activities
-    fetch(`http://localhost:5000/api/profile/${uid}/activities`)
-      .then(res => res.ok ? res.json() : [])
-      .then(activities => setRecentActivities(activities.slice(0, 5)));
-  }, [uid]);
-  return { ...user, recentActivities };
-}
-
-// Child component for authenticated dashboard content
-function DashboardContent({ uid, currentLanguage }: { uid: string, currentLanguage: Language }) {
-  const t = useTranslation(currentLanguage);
-  const { name, email, avatar, recentActivities } = useUserProfile(uid);
-  const user = { name, email, avatar };
   const [stats, setStats] = useState({
     storiesCreated: 0,
     worksheetsGenerated: 0,
@@ -78,15 +51,64 @@ function DashboardContent({ uid, currentLanguage }: { uid: string, currentLangua
     chatUsageSeconds: 0,
   });
 
-  // Fetch dashboard stats from backend
   useEffect(() => {
     if (!uid) return;
-    fetch(`http://localhost:5000/api/profile/${uid}/dashboard-stats`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (data) setStats(data);
-      });
+
+    const fetchData = async () => {
+      try {
+        // Get Firebase ID token
+        const idToken = await auth.currentUser?.getIdToken();
+        if (!idToken) {
+          console.error('No ID token available');
+          return;
+        }
+
+        const headers = {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json'
+        };
+
+        // Fetch profile
+        const profileResponse = await fetch(`http://localhost:5000/api/profile/${uid}`, { headers });
+        if (profileResponse.ok) {
+          const data = await profileResponse.json();
+          setUser({
+            name: data.fullName || "",
+            email: data.email || "",
+            avatar: data.avatar || "/placeholder.svg",
+            uid,
+          });
+        }
+
+        // Fetch recent activities
+        const activitiesResponse = await fetch(`http://localhost:5000/api/profile/${uid}/activities`, { headers });
+        if (activitiesResponse.ok) {
+          const activities = await activitiesResponse.json();
+          setRecentActivities(activities.slice(0, 5));
+        }
+
+        // Fetch dashboard stats
+        const statsResponse = await fetch(`http://localhost:5000/api/profile/${uid}/dashboard-stats`, { headers });
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          setStats(statsData);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
+    };
+
+    fetchData();
   }, [uid]);
+
+  return { ...user, recentActivities, stats };
+}
+
+// Child component for authenticated dashboard content
+function DashboardContent({ uid, currentLanguage }: { uid: string, currentLanguage: Language }) {
+  const t = useTranslation(currentLanguage);
+  const { name, email, avatar, recentActivities, stats } = useUserProfile(uid);
+  const user = { name, email, avatar };
 
   // Load language preference and listen for changes
   useEffect(() => {
@@ -285,7 +307,13 @@ function DashboardContent({ uid, currentLanguage }: { uid: string, currentLangua
             <Card className="dark:bg-gray-800 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 dark:text-white">
-                  <Sparkles className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                  {/* <Sparkles className="h-5 w-5 text-indigo-600 dark:text-indigo-400" /> */}
+                  <img
+    src={Sayahak.src}
+    alt="Sahayak Logo"
+    className="h-10 w-10 object-contain"
+    style={{ minWidth: 40 }}
+  />
                   Quick Actions
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">

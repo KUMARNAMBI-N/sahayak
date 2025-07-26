@@ -30,8 +30,9 @@ import { useToast } from "@/hooks/use-toast"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { FontSizeSelector } from "@/components/font-size-selector"
+
 import { analyzeReadingWithLanguage } from "@/lib/gemini"
-import { saveToLibrary } from "@/lib/firestore"
+import { readingAssessmentAPI } from "@/lib/api";
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ReadingAnalysisLoader } from "@/components/loading-states"
 import { useTranslation, type Language } from "@/lib/localization"
@@ -339,13 +340,13 @@ export default function ReadingAssessmentPage() {
     setError("")
 
     try {
-      const result = await analyzeReadingWithLanguage(transcript, selectedLanguage, readingText)
-      setAnalysisResult(result)
+      const result = await analyzeReadingWithLanguage(transcript, selectedLanguage, readingText);
+      setAnalysisResult(result);
 
       toast({
         title: "Analysis complete!",
         description: "Reading performance has been analyzed successfully.",
-      })
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to analyze reading"
       setError(errorMessage)
@@ -367,25 +368,13 @@ export default function ReadingAssessmentPage() {
       const languageLabel = languages.find((lang) => lang.value === selectedLanguage)?.label
       const user = auth.currentUser;
       const userId = user ? user.uid : "";
-      await saveToLibrary({
-        type: "reading-assessment",
+      await readingAssessmentAPI.create({
         title: `Reading Assessment - ${languageLabel}`,
-        content: JSON.stringify(
-          {
-            originalText: readingText,
-            transcript: transcript,
-            analysis: analysisResult,
-            hasAudio: !!audioBlob,
-          },
-          null,
-          2,
-        ),
-        metadata: {
-          language: selectedLanguage,
-          languageLabel,
-          overallScore: analysisResult.overallScore,
-          wordsPerMinute: analysisResult.wordsPerMinute,
-          assessmentDate: new Date().toISOString(),
+        assessmentData: {
+          originalText: readingText,
+          transcript: transcript,
+          analysis: analysisResult,
+          hasAudio: !!audioBlob,
         },
         userId,
       })

@@ -20,7 +20,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Loader2, FileText, Copy, Heart, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { saveToLibrary } from "@/lib/firestore";
+import { lessonPlannerAPI } from "@/lib/api";
 import { Navigation } from "@/components/navigation";
 import { auth } from "@/lib/firebase";
 
@@ -67,23 +67,58 @@ export default function LessonPlannerPage() {
     setError("");
 
     try {
-      const res = await fetch("/api/lessonPlanner", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject: selectedSubject,
-          grades: [selectedGrade],
-          topic,
-          duration,
-        }),
-      });
-
-      const data = await res.json();
-      if (data.error) {
-        setError(data.error);
-      } else {
-        setLessonPlan(JSON.stringify(data.lessonPlan ?? data, null, 2));
-      }
+      // For now, we'll create a mock lesson plan since the AI generation endpoint isn't set up yet
+      const mockLessonPlan = {
+        title: `${selectedSubject} - ${topic}`,
+        grade: selectedGrade,
+        duration: duration,
+        objectives: [
+          `Understand the basic concepts of ${topic}`,
+          `Apply knowledge through practical activities`,
+          `Demonstrate comprehension through assessment`
+        ],
+        activities: [
+          {
+            day: 1,
+            title: "Introduction",
+            description: `Introduce students to ${topic} through interactive discussion and visual aids.`
+          },
+          {
+            day: 2,
+            title: "Hands-on Learning",
+            description: `Engage students in practical activities related to ${topic}.`
+          },
+          {
+            day: 3,
+            title: "Group Work",
+            description: `Students work in groups to explore different aspects of ${topic}.`
+          },
+          {
+            day: 4,
+            title: "Assessment",
+            description: `Evaluate student understanding through quizzes and activities.`
+          },
+          {
+            day: 5,
+            title: "Review and Reflection",
+            description: `Review key concepts and allow students to reflect on their learning.`
+          }
+        ],
+        assessment: [
+          "Class participation and engagement",
+          "Group project completion",
+          "Individual quiz scores",
+          "Reflection journal entries"
+        ],
+        resources: [
+          "Textbook chapters",
+          "Online videos and simulations",
+          "Hands-on materials",
+          "Assessment tools"
+        ]
+      };
+      
+      setLessonPlan(JSON.stringify(mockLessonPlan, null, 2));
     } catch (err) {
       console.error(err);
       setError("Failed to generate lesson plan. Please try again.");
@@ -96,17 +131,17 @@ export default function LessonPlannerPage() {
     if (!lessonPlan) return;
     setIsSaving(true);
     try {
-      await saveToLibrary({
-        type: "worksheet",
+      const user = auth.currentUser;
+      const userId = user ? user.uid : "";
+      await lessonPlannerAPI.create({
         title: topic || "Untitled Lesson Plan",
-        content: JSON.stringify({
+        plan: {
           subject: selectedSubject,
           grade: selectedGrade,
           topic,
           lesson: lessonPlan,
-        }),
-        metadata: {},
-        userId: "",
+        },
+        userId,
       });
       toast({ title: "Saved successfully!" });
     } catch (err) {
