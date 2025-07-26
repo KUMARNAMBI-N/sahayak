@@ -17,6 +17,7 @@ import { generateStoryAPI } from "@/lib/api"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { StoryGenerationLoader } from "@/components/loading-states"
 import { auth } from "@/lib/firebase";
+import FeedbackForm from "@/components/FeedbackForm"
 
 const languages = [
   { value: "marathi", label: "मराठी (Marathi)", nativeName: "मराठी" },
@@ -148,6 +149,9 @@ export default function GenerateStoryPage() {
 
   const selectedLangLabel = languages.find((lang) => lang.value === selectedLanguage)?.label || "Hindi"
 
+  // Get userId from current user
+  const userId = auth.currentUser ? auth.currentUser.uid : "";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation user={auth.currentUser ? {
@@ -232,7 +236,7 @@ export default function GenerateStoryPage() {
                 />
               </div>
 
-              <Button onClick={handleGenerateStory} disabled={isLoading || !hasApiKey} className="w-full" size="lg">
+              <Button onClick={handleGenerateStory} disabled={isLoading || !hasApiKey} className="w-full bg-teal-600 hover:bg-teal-700 text-white border-teal-600" size="lg">
                 {isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -290,6 +294,13 @@ export default function GenerateStoryPage() {
                       )}
                     </Button>
                   </div>
+                  {/* Add FeedbackForm below the story and buttons */}
+                  <FeedbackForm
+                    userId={userId}
+                    feature="story"
+                    inputPrompt={prompt}
+                    outputContent={generatedStory}
+                  />
                 </div>
               ) : (
                 <div className="text-center py-12 text-gray-500">

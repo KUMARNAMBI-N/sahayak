@@ -142,7 +142,11 @@ export function Navigation({ user }: NavigationProps) {
                     <Button
                       variant={isActive(item.href) ? "default" : "ghost"}
                       size="sm"
-                      className="flex items-center space-x-2 dark:text-white dark:hover:bg-gray-700"
+                      className={`flex items-center space-x-2 dark:text-white dark:hover:bg-gray-700 ${
+                        isActive(item.href) 
+                          ? "bg-teal-600 hover:bg-teal-700 text-white border-teal-600" 
+                          : "hover:bg-teal-50 dark:hover:bg-teal-900/20"
+                      }`}
                     >
                       <Icon className="h-4 w-4" />
                       <span className="hidden xl:inline">{item.name}</span>
@@ -239,7 +243,7 @@ export function Navigation({ user }: NavigationProps) {
                   </Button>
                 </Link>
                 <Link href="/get-started">
-                  <Button size="sm">Get Started</Button>
+                  <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white border-teal-600">Get Started</Button>
                 </Link>
               </div>
             )}
@@ -283,8 +287,8 @@ export function Navigation({ user }: NavigationProps) {
                           onClick={() => setIsOpen(false)}
                           className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
                             isActive(item.href)
-                              ? "bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300"
-                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              ? "bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300"
+                              : "text-gray-700 dark:text-gray-300 hover:bg-teal-50 dark:hover:bg-teal-900/20"
                           }`}
                         >
                           <Icon className="h-5 w-5" />

@@ -20,6 +20,8 @@ import { saveToLibrary } from '@/lib/firestore';
 import { auth } from '@/lib/firebase';
 import { generateGeneralResponse } from '@/lib/gemini';
 import { onAuthStateChanged } from 'firebase/auth';
+import FeedbackForm from "@/components/FeedbackForm"
+
 
 interface Message {
   id: string
@@ -51,6 +53,8 @@ export default function AIAssistantPage() {
   const t = useTranslation(currentLanguage)
   const [user, setUser] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [feedbackGiven, setFeedbackGiven] = useState<{ [id: string]: boolean }>({});
+  
 
   // Check if API key is available
   const hasApiKey = !!process.env.NEXT_PUBLIC_GEMINI_API_KEY
@@ -459,6 +463,23 @@ export default function AIAssistantPage() {
                                 return dateObj.toLocaleTimeString();
                               })()}
                             </div>
+                            {/* Add FeedbackForm for assistant messages only */}
+                            {message.role === "assistant" && (
+                              <FeedbackForm
+                                key={message.id}
+                                userId={auth.currentUser ? auth.currentUser.uid : ""}
+                                feature="ai-assistant"
+                                inputPrompt={
+                                  messages
+                                    .slice(0, messages.findIndex(m => m.id === message.id))
+                                    .filter(m => m.role === "user")
+                                    .slice(-1)[0]?.content || ""
+                                }
+                                outputContent={message.content}
+                                submitted={feedbackGiven[message.id] || false}
+                                onSubmit={() => setFeedbackGiven(prev => ({ ...prev, [message.id]: true }))}
+                              />
+                            )}
                           </div>
                         </div>
                       </div>

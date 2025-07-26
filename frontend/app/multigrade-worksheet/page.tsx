@@ -7,6 +7,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import FeedbackForm from "@/components/FeedbackForm"
+
 import {
   Copy,
   Download,
@@ -531,7 +533,7 @@ export default function MultigradeWorksheetPage() {
                 </TabsContent>
               </Tabs>
 
-              <Button onClick={handleGenerateWorksheet} disabled={isLoading || !hasApiKey} className="w-full" size="lg">
+              <Button onClick={handleGenerateWorksheet} disabled={isLoading || !hasApiKey} className="w-full bg-teal-600 hover:bg-teal-700 text-white border-teal-600" size="lg">
                 {isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -611,6 +613,13 @@ export default function MultigradeWorksheetPage() {
                       )}
                     </Button>
                   </div>
+                                    {/* Feedback form for worksheet */}
+                  <FeedbackForm
+                    userId={auth.currentUser ? auth.currentUser.uid : ""}
+                    feature="worksheet"
+                    inputPrompt={content}
+                    outputContent={generatedWorksheet}
+                  />
                 </div>
               ) : (
                 <div className="text-center py-12 text-gray-500 dark:text-gray-400">

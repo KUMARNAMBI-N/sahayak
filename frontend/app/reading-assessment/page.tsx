@@ -531,7 +531,11 @@ export default function ReadingAssessmentPage() {
                   <Button
                     onClick={isListening ? stopSpeechToText : startSpeechToText}
                     variant={isListening ? "destructive" : "default"}
-                    className="h-12"
+                    className={`h-12 ${
+                      !isListening 
+                        ? "bg-teal-600 hover:bg-teal-700 text-white border-teal-600" 
+                        : ""
+                    }`}
                   >
                     {isListening ? (
                       <>
@@ -549,7 +553,11 @@ export default function ReadingAssessmentPage() {
                   <Button
                     onClick={isRecording ? stopRecording : startRecording}
                     variant={isRecording ? "destructive" : "outline"}
-                    className="h-12 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
+                    className={`h-12 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 ${
+                      !isRecording 
+                        ? "border-teal-600 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20" 
+                        : ""
+                    }`}
                   >
                     {isRecording ? (
                       <>
@@ -567,8 +575,8 @@ export default function ReadingAssessmentPage() {
 
                 {/* Status Indicators */}
                 {isListening && (
-                  <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
-                    <div className="w-3 h-3 bg-blue-600 dark:bg-blue-400 rounded-full animate-pulse"></div>
+                  <div className="flex items-center space-x-2 text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20 p-3 rounded-lg">
+                    <div className="w-3 h-3 bg-teal-600 dark:bg-teal-400 rounded-full animate-pulse"></div>
                     <span className="text-sm font-medium">🎤 Listening for speech... Speak clearly!</span>
                   </div>
                 )}
@@ -587,7 +595,7 @@ export default function ReadingAssessmentPage() {
                       onClick={playAudio}
                       variant="outline"
                       size="sm"
-                      className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-600 bg-transparent"
+                      className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-600 bg-transparent border-teal-600 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
                     >
                       <Play className="h-4 w-4 mr-2" />
                       Play Recording
@@ -596,7 +604,7 @@ export default function ReadingAssessmentPage() {
                       onClick={downloadAudio}
                       variant="outline"
                       size="sm"
-                      className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-600 bg-transparent"
+                      className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-600 bg-transparent border-teal-600 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
                     >
                       <Download className="h-4 w-4 mr-2" />
                       Download
@@ -621,7 +629,7 @@ export default function ReadingAssessmentPage() {
                   </p>
                 </div>
 
-                <Button onClick={analyzeReading} disabled={isAnalyzing || !hasApiKey} className="w-full h-12" size="lg">
+                <Button onClick={analyzeReading} disabled={isAnalyzing || !hasApiKey} className="w-full h-12 bg-teal-600 hover:bg-teal-700 text-white border-teal-600" size="lg">
                   {isAnalyzing ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -815,7 +823,7 @@ export default function ReadingAssessmentPage() {
 
                   {/* Action Buttons */}
                   <div className="flex gap-3 pt-4">
-                    <Button onClick={handleSaveAssessment} className="flex-1 h-12" disabled={isSaving}>
+                    <Button onClick={handleSaveAssessment} className="flex-1 h-12 bg-teal-600 hover:bg-teal-700 text-white border-teal-600" disabled={isSaving}>
                       {isSaving ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -832,7 +840,7 @@ export default function ReadingAssessmentPage() {
                     <Button
                       onClick={handleRetry}
                       variant="outline"
-                      className="flex-1 h-12 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 bg-transparent"
+                      className="flex-1 h-12 dark:border-gray-600 dark:text-white dark:hover:bg-gray-700 bg-transparent border-teal-600 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/20"
                     >
                       <RotateCcw className="h-4 w-4 mr-2" />
                       New Assessment
@@ -841,8 +849,8 @@ export default function ReadingAssessmentPage() {
                 </div>
               ) : (
                 <div className="text-center py-16 text-gray-500 dark:text-gray-400">
-                  <div className="bg-orange-100 dark:bg-orange-900/20 p-6 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-                    <Mic className="h-12 w-12 text-orange-600 dark:text-orange-400" />
+                  <div className="bg-teal-100 dark:bg-teal-900/20 p-6 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+                    <Mic className="h-12 w-12 text-teal-600 dark:text-teal-400" />
                   </div>
                   <h3 className="text-xl font-semibold mb-3 dark:text-white">Ready for Reading Assessment</h3>
                   <p className="text-sm max-w-md mx-auto leading-relaxed">
@@ -866,8 +874,8 @@ export default function ReadingAssessmentPage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="text-center">
-                <div className="bg-orange-100 dark:bg-orange-900/20 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">1</span>
+                <div className="bg-teal-100 dark:bg-teal-900/20 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-teal-600 dark:text-teal-400">1</span>
                 </div>
                 <h3 className="font-semibold mb-2 dark:text-white">Select Language</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -875,8 +883,8 @@ export default function ReadingAssessmentPage() {
                 </p>
               </div>
               <div className="text-center">
-                <div className="bg-orange-100 dark:bg-orange-900/20 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">2</span>
+                <div className="bg-teal-100 dark:bg-teal-900/20 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-teal-600 dark:text-teal-400">2</span>
                 </div>
                 <h3 className="font-semibold mb-2 dark:text-white">Record or Speak</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -884,8 +892,8 @@ export default function ReadingAssessmentPage() {
                 </p>
               </div>
               <div className="text-center">
-                <div className="bg-orange-100 dark:bg-orange-900/20 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">3</span>
+                <div className="bg-teal-100 dark:bg-teal-900/20 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-teal-600 dark:text-teal-400">3</span>
                 </div>
                 <h3 className="font-semibold mb-2 dark:text-white">Get AI Analysis</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -893,12 +901,12 @@ export default function ReadingAssessmentPage() {
                 </p>
               </div>
               <div className="text-center">
-                <div className="bg-orange-100 dark:bg-orange-900/20 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">4</span>
+                <div className="bg-teal-100 dark:bg-teal-900/20 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-teal-600 dark:text-teal-400">4</span>
                 </div>
                 <h3 className="font-semibold mb-2 dark:text-white">Track Progress</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Save results and monitor improvement over time
+                  Save your assessments and monitor your reading improvement over time
                 </p>
               </div>
             </div>

@@ -108,7 +108,7 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Google Login */}
-            <Button onClick={handleGoogleLogin} variant="outline" className="w-full bg-transparent" size="lg">
+            <Button onClick={handleGoogleLogin} variant="outline" className="w-full bg-transparent border-teal-600 text-teal-600 hover:bg-teal-50" size="lg">
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                 <path
                   fill="currentColor"
@@ -185,18 +185,18 @@ export default function LoginPage() {
                   <input
                     id="remember"
                     type="checkbox"
-                    className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    className="rounded border-gray-300 text-teal-600 focus:ring-teal-500"
                   />
                   <Label htmlFor="remember" className="text-sm">
                     Remember me
                   </Label>
                 </div>
-                <Link href="/forgot-password" className="text-sm text-indigo-600 hover:text-indigo-500">
+                <Link href="/forgot-password" className="text-sm text-teal-600 hover:text-teal-500">
                   Forgot password?
                 </Link>
               </div>
 
-              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+              <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700 text-white border-teal-600" size="lg" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -211,7 +211,7 @@ export default function LoginPage() {
             <div className="text-center">
               <p className="text-sm text-gray-600">
                 Don't have an account?{" "}
-                <Link href="/get-started" className="text-indigo-600 hover:text-indigo-500 font-medium">
+                <Link href="/get-started" className="text-teal-600 hover:text-teal-500 font-medium">
                   Get started for free
                 </Link>
               </p>
