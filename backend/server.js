@@ -10,7 +10,7 @@ const multigradeWorksheetRoutes = require('./routes/multigradeWorksheetRoutes');
 const lessonPlannerRoutes = require('./routes/lessonPlannerRoutes');
 const visualAidRoutes = require('./routes/visualAidRoutes');
 const readingAssessmentRoutes = require('./routes/readingAssessmentRoutes');
-
+const feedbackRoutes = require('./routes/feedback');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -42,6 +42,7 @@ app.use('/api/multigrade-worksheet', multigradeWorksheetRoutes);
 app.use('/api/lesson-planner', lessonPlannerRoutes);
 app.use('/api/visual-aid', visualAidRoutes);
 app.use('/api/reading-assessment', readingAssessmentRoutes);
+app.use('/api', feedbackRoutes);
 
 
 app.listen(PORT, () => {

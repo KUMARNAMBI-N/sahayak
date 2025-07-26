@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ChevronLeft, ChevronRight, Sparkles, BookOpen, FileText, ImageIcon, Users, Award } from "lucide-react"
 import Link from "next/link"
 import { Navigation } from "@/components/navigation"
+import { Footer } from "@/components/footer"
+import Sayahak from "@/public/sahayak_logo.png";
 
 const slides = [
   {
@@ -14,7 +16,7 @@ const slides = [
     subtitle: "Create engaging local stories and culturally relevant content",
     description:
       "Generate stories in regional languages that connect with your students' cultural background and make learning more meaningful.",
-    image: "/placeholder.svg?height=400&width=600&text=AI+Story+Generation",
+    image: "/trasformingwithAI.jpg?height=400&width=600&text=AI+Story+Generation",
     cta: "Generate Stories",
     ctaLink: "/get-started",
     bgColor: "from-blue-600 to-indigo-700",
@@ -25,7 +27,7 @@ const slides = [
     subtitle: "Upload textbook images, get instant worksheets",
     description:
       "Simply upload a textbook page and our AI creates customized worksheets for multiple grade levels automatically.",
-    image: "/placeholder.svg?height=400&width=600&text=Multigrade+Worksheets",
+    image: "/worksheetgenerator.jpg?height=400&width=600&text=Multigrade+Worksheets",
     cta: "Create Worksheets",
     ctaLink: "/get-started",
     bgColor: "from-green-600 to-emerald-700",
@@ -36,7 +38,7 @@ const slides = [
     subtitle: "Generate diagrams and visual aids instantly",
     description:
       "Create educational diagrams and visual aids that help students understand complex concepts through visual representation.",
-    image: "/placeholder.svg?height=400&width=600&text=Visual+Learning",
+    image: "/visual.jpg?height=400&width=600&text=Visual+Learning",
     cta: "Create Visuals",
     ctaLink: "/get-started",
     bgColor: "from-purple-600 to-pink-700",
@@ -47,7 +49,7 @@ const slides = [
     subtitle: "Instant feedback for student reading skills",
     description:
       "Record student reading sessions and get detailed analysis with personalized feedback and improvement suggestions.",
-    image: "/placeholder.svg?height=400&width=600&text=Reading+Assessment",
+    image: "/readingassesment.jpg?height=400&width=600&text=Reading+Assessment",
     cta: "Try Assessment",
     ctaLink: "/get-started",
     bgColor: "from-orange-600 to-red-700",
@@ -225,8 +227,13 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-2 rounded-full w-16 h-16 mx-auto mb-8 flex items-center justify-center">
-            <Sparkles className="h-8 w-8 text-white" />
+          <div className=" from-indigo-600 to-purple-600 p-2 rounded-full w-16 h-16 mx-auto mb-8 flex items-center justify-center">
+          <img
+    src={Sayahak.src}
+    alt="Sahayak Logo"
+    className="h-10 w-10 object-contain"
+    style={{ minWidth: 40 }}
+  />
           </div>
           <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6">Ready to Transform Your Teaching?</h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
@@ -254,8 +261,13 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center space-x-3 mb-4">
-                <div className="bg-indigo-600 p-2 rounded-lg">
-                  <Sparkles className="h-6 w-6 text-white" />
+                <div className="p-2 rounded-lg">
+                <img
+    src={Sayahak.src}
+    alt="Sahayak Logo"
+    className="h-10 w-10 object-contain"
+    style={{ minWidth: 40 }}
+  />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold">SAHAYAK</h3>
@@ -286,10 +298,12 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 SAHAYAK. All rights reserved.</p>
+            <p>&copy; 2025 SAHAYAK. All rights reserved.</p>
           </div>
         </div>
       </footer>
+      
+
     </div>
   )
 }

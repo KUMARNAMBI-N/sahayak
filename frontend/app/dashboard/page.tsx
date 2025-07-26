@@ -19,12 +19,10 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react"
-import Sayahak from "@/public/sahayak_logo.png";
 import Link from "next/link"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { FontSizeSelector } from "@/components/font-size-selector"
-import { LanguageSelector } from "@/components/language-selector"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useTranslation, type Language } from "@/lib/localization"
 import { auth } from "@/lib/firebase";
@@ -44,6 +42,34 @@ type Activity = {
 function useUserProfile(uid: string) {
   const [user, setUser] = useState({ name: "", email: "", avatar: "", uid: "" });
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
+  useEffect(() => {
+    if (!uid) return;
+    // Fetch profile
+    fetch(`http://localhost:5000/api/profile/${uid}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) {
+          setUser({
+            name: data.fullName || "",
+            email: data.email || "",
+            avatar: data.avatar || "/placeholder.svg",
+            uid,
+          });
+        }
+      });
+    // Fetch recent activities
+    fetch(`http://localhost:5000/api/profile/${uid}/activities`)
+      .then(res => res.ok ? res.json() : [])
+      .then(activities => setRecentActivities(activities.slice(0, 5)));
+  }, [uid]);
+  return { ...user, recentActivities };
+}
+
+// Child component for authenticated dashboard content
+function DashboardContent({ uid, currentLanguage }: { uid: string, currentLanguage: Language }) {
+  const t = useTranslation(currentLanguage);
+  const { name, email, avatar, recentActivities } = useUserProfile(uid);
+  const user = { name, email, avatar };
   const [stats, setStats] = useState({
     storiesCreated: 0,
     worksheetsGenerated: 0,
@@ -52,64 +78,28 @@ function useUserProfile(uid: string) {
     chatUsageSeconds: 0,
   });
 
+  // Fetch dashboard stats from backend
   useEffect(() => {
     if (!uid) return;
-
-    const fetchData = async () => {
-      try {
-        // Get Firebase ID token
-        const idToken = await auth.currentUser?.getIdToken();
-        if (!idToken) {
-          console.error('No ID token available');
-          return;
-        }
-
-        const headers = {
-          'Authorization': `Bearer ${idToken}`,
-          'Content-Type': 'application/json'
-        };
-
-        // Fetch profile
-        const profileResponse = await fetch(`http://localhost:5000/api/profile/${uid}`, { headers });
-        if (profileResponse.ok) {
-          const data = await profileResponse.json();
-          setUser({
-            name: data.fullName || "",
-            email: data.email || "",
-            avatar: data.avatar || "/placeholder.svg",
-            uid,
-          });
-        }
-
-        // Fetch recent activities
-        const activitiesResponse = await fetch(`http://localhost:5000/api/profile/${uid}/activities`, { headers });
-        if (activitiesResponse.ok) {
-          const activities = await activitiesResponse.json();
-          setRecentActivities(activities.slice(0, 5));
-        }
-
-        // Fetch dashboard stats
-        const statsResponse = await fetch(`http://localhost:5000/api/profile/${uid}/dashboard-stats`, { headers });
-        if (statsResponse.ok) {
-          const statsData = await statsResponse.json();
-          setStats(statsData);
-        }
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      }
-    };
-
-    fetchData();
+    fetch(`http://localhost:5000/api/profile/${uid}/dashboard-stats`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data) setStats(data);
+      });
   }, [uid]);
 
-  return { ...user, recentActivities, stats };
-}
-
-// Child component for authenticated dashboard content
-function DashboardContent({ uid, currentLanguage }: { uid: string, currentLanguage: Language }) {
-  const t = useTranslation(currentLanguage);
-  const { name, email, avatar, recentActivities, stats } = useUserProfile(uid);
-  const user = { name, email, avatar };
+  // Load language preference and listen for changes
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem("sahayak-language") as Language
+    if (savedLanguage) {
+      // This is safe because parent controls currentLanguage
+    }
+    const handleLanguageChange = (event: CustomEvent) => {
+      // This is safe because parent controls currentLanguage
+    }
+    window.addEventListener("languageChange", handleLanguageChange as EventListener)
+    return () => window.removeEventListener("languageChange", handleLanguageChange as EventListener)
+  }, [])
 
   // Check if API key is available
   const hasApiKey = !!process.env.NEXT_PUBLIC_GEMINI_API_KEY
@@ -126,7 +116,7 @@ function DashboardContent({ uid, currentLanguage }: { uid: string, currentLangua
       borderColor: "border-purple-200 dark:border-purple-800",
     },
     {
-      title: t("lessonPlanner"),
+      title: "Lesson Planner",
       description: "Plan detailed lessons with AI support",
       icon: BookOpen,
       href: "/lesson-planner",
@@ -198,10 +188,7 @@ function DashboardContent({ uid, currentLanguage }: { uid: string, currentLangua
               <p className="text-gray-600 dark:text-gray-300">{t("readyToCreate")}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            {/* <LanguageSelector /> */}
-            <FontSizeSelector />
-          </div>
+          <FontSizeSelector />
         </div>
 
         {/* API Key Status */}
@@ -298,13 +285,7 @@ function DashboardContent({ uid, currentLanguage }: { uid: string, currentLangua
             <Card className="dark:bg-gray-800 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 dark:text-white">
-                  {/* <Sparkles className="h-5 w-5 text-indigo-600 dark:text-indigo-400" /> */}
-                  <img
-    src={Sayahak.src}
-    alt="Sahayak Logo"
-    className="h-10 w-10 object-contain"
-    style={{ minWidth: 40 }}
-  />
+                  <Sparkles className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                   Quick Actions
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
@@ -408,29 +389,10 @@ function DashboardContent({ uid, currentLanguage }: { uid: string, currentLangua
 export default function DashboardPage() {
   useAuthRedirect();
   const [currentLanguage, setCurrentLanguage] = useState<Language>("english")
-  
   // Auth Guard
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [uid, setUid] = useState<string | null>(null);
   const router = require('next/navigation').useRouter();
-
-  // Load language preference on mount
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem("sahayak-language") as Language;
-    if (savedLanguage && ["english", "hindi", "marathi", "malayalam", "tamil", "telugu", "kannada", "bengali", "assamese", "gujarati"].includes(savedLanguage)) {
-      setCurrentLanguage(savedLanguage);
-    }
-  }, []);
-
-  // Listen for language changes
-  useEffect(() => {
-    const handleLanguageChange = (event: CustomEvent) => {
-      setCurrentLanguage(event.detail);
-    };
-    
-    window.addEventListener("languageChange", handleLanguageChange as EventListener);
-    return () => window.removeEventListener("languageChange", handleLanguageChange as EventListener);
-  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {

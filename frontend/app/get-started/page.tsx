@@ -290,7 +290,7 @@ export default function GetStartedPage() {
                       step.id < currentStep
                         ? "bg-green-500 text-white"
                         : step.id === currentStep
-                          ? "bg-indigo-600 text-white"
+                          ? "bg-teal-600 text-white"
                           : "bg-gray-200 text-gray-600"
                     }`}
                   >
@@ -572,11 +572,11 @@ export default function GetStartedPage() {
                     />
                     <Label htmlFor="terms" className="text-sm leading-relaxed">
                       I agree to the{" "}
-                      <Link href="/terms" className="text-indigo-600 hover:text-indigo-500">
+                      <Link href="/terms" className="text-teal-600 hover:text-teal-500">
                         Terms of Service
                       </Link>{" "}
                       and{" "}
-                      <Link href="/privacy" className="text-indigo-600 hover:text-indigo-500">
+                      <Link href="/privacy" className="text-teal-600 hover:text-teal-500">
                         Privacy Policy
                       </Link>
                     </Label>
@@ -589,19 +589,19 @@ export default function GetStartedPage() {
             <div className="flex justify-between pt-6">
               <div>
                 {currentStep > 1 && (
-                  <Button onClick={prevStep} variant="outline">
+                  <Button onClick={prevStep} variant="outline" className="border-teal-600 text-teal-600 hover:bg-teal-50">
                     Previous
                   </Button>
                 )}
               </div>
               <div className="flex space-x-2">
                 {currentStep < 3 ? (
-                  <Button onClick={nextStep}>
+                  <Button onClick={nextStep} className="bg-teal-600 hover:bg-teal-700 text-white border-teal-600">
                     Next
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button onClick={handleSubmit} disabled={isLoading} size="lg">
+                  <Button onClick={handleSubmit} disabled={isLoading} size="lg" className="bg-teal-600 hover:bg-teal-700 text-white border-teal-600">
                     {isLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -618,7 +618,7 @@ export default function GetStartedPage() {
             <div className="text-center pt-4">
               <p className="text-sm text-gray-600">
                 Already have an account?{" "}
-                <Link href="/login" className="text-indigo-600 hover:text-indigo-500 font-medium">
+                <Link href="/login" className="text-teal-600 hover:text-teal-500 font-medium">
                   Sign in here
                 </Link>
               </p>
