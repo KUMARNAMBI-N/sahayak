@@ -16,6 +16,7 @@ import { saveToLibrary } from "@/lib/firestore"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { StoryGenerationLoader } from "@/components/loading-states"
 import { auth } from "@/lib/firebase";
+import FeedbackForm from "@/components/FeedbackForm"
 
 const languages = [
   { value: "marathi", label: "मराठी (Marathi)", nativeName: "मराठी" },
@@ -163,6 +164,10 @@ export default function GenerateStoryPage() {
 
   const selectedLangLabel = languages.find((lang) => lang.value === selectedLanguage)?.label || "Hindi"
 
+  // Get userId from Firebase auth
+  const user = auth.currentUser;
+  const userId = user ? user.uid : "";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       <Navigation user={auth.currentUser ? {
@@ -305,6 +310,13 @@ export default function GenerateStoryPage() {
                       )}
                     </Button>
                   </div>
+                  {/* Add FeedbackForm below the story and buttons */}
+                  <FeedbackForm
+                    userId={userId}
+                    feature="story"
+                    inputPrompt={prompt}
+                    outputContent={generatedStory}
+                  />
                 </div>
               ) : (
                 <div className="text-center py-12 text-gray-500">

@@ -30,6 +30,7 @@ import { saveToLibrary } from "@/lib/firestore"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { WorksheetGenerationLoader } from "@/components/loading-states"
 import { auth } from "@/lib/firebase";
+import FeedbackForm from "@/components/FeedbackForm"
 
 const grades = [
   { value: "1", label: "Grade 1" },
@@ -611,6 +612,13 @@ export default function MultigradeWorksheetPage() {
                       )}
                     </Button>
                   </div>
+                  {/* Feedback form for worksheet */}
+                  <FeedbackForm
+                    userId={auth.currentUser ? auth.currentUser.uid : ""}
+                    feature="worksheet"
+                    inputPrompt={content}
+                    outputContent={generatedWorksheet}
+                  />
                 </div>
               ) : (
                 <div className="text-center py-12 text-gray-500 dark:text-gray-400">
