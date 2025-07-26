@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import Sayahak from "@/public/sahayak_logo.png"
+import Sayahak from "@/public/sahayak_logo.png";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useToast } from "@/hooks/use-toast"
 import { useTranslation, type Language } from "@/lib/localization"
@@ -122,18 +122,15 @@ export function Navigation({ user }: NavigationProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href={user ? "/dashboard" : "/"} className="flex items-center space-x-3">
-            <div className="bg-indigo-600 bg-white p-2 rounded-lg">
-              {/* <Sparkles className="h-6 w-6 text-white" /> */}
-              <img src={Sayahak.src} alt="Logo" className="h-12 w-12" />
-
-
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">SAHAYAK</h1>
-              <p className="text-xs text-gray-600 dark:text-gray-300 hidden sm:block">AI Teaching Companion</p>
-            </div>
-          </Link>
+          <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-1 h-16">
+  <img
+    src={Sayahak.src}
+    alt="Sahayak Logo"
+    className="h-10 w-10 object-contain"
+    style={{ minWidth: 40 }}
+  />
+  <span className="text-lg font-bold">SAHAYAK</span>
+</Link>
 
           {/* Desktop Navigation */}
           {user && (
@@ -303,5 +300,5 @@ export function Navigation({ user }: NavigationProps) {
         </div>
       </div>
     </nav>
-  )
+  );
 }

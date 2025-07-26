@@ -104,7 +104,11 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <Navigation />
+      <Navigation user={auth.currentUser ? {
+        name: auth.currentUser.displayName || '',
+        email: auth.currentUser.email || '',
+        avatar: auth.currentUser.photoURL || undefined
+      } : undefined} />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">

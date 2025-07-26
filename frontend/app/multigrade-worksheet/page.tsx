@@ -56,12 +56,6 @@ const subjects = [
   { value: "general", label: "General Knowledge" },
 ]
 
-// Mock user data
-const user = {
-  name: "Priya Sharma",
-  email: "priya.sharma@school.edu",
-  avatar: "/placeholder.svg?height=32&width=32&text=PS",
-}
 
 export default function MultigradeWorksheetPage() {
   const [content, setContent] = useState("")
@@ -246,7 +240,7 @@ export default function MultigradeWorksheetPage() {
       const userId = user ? user.uid : "";
 
       await saveToLibrary({
-        type: "worksheet",
+        type: "worksheet",  
         title: `${gradeLabel} ${subjectLabel} Worksheet`,
         content: generatedWorksheet,
         metadata: {
@@ -293,7 +287,11 @@ export default function MultigradeWorksheetPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <Navigation user={user} />
+      <Navigation user={auth.currentUser ? {
+        name: auth.currentUser.displayName || '',
+        email: auth.currentUser.email || '',
+        avatar: auth.currentUser.photoURL || undefined
+      } : undefined} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with Font Size Selector */}

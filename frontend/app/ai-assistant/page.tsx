@@ -16,6 +16,10 @@ import { Footer } from "@/components/footer"
 import { FontSizeSelector } from "@/components/font-size-selector"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useTranslation, type Language } from "@/lib/localization"
+import { saveToLibrary } from '@/lib/firestore';
+import { auth } from '@/lib/firebase';
+import { generateGeneralResponse } from '@/lib/gemini';
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface Message {
   id: string
@@ -33,199 +37,246 @@ interface ChatSession {
 }
 
 // Mock user data
-const user = {
-  name: "Priya Sharma",
-  email: "priya.sharma@school.edu",
-  avatar: "/placeholder.svg?height=32&width=32&text=PS",
-}
+
 
 export default function AIAssistantPage() {
   const [currentLanguage, setCurrentLanguage] = useState<Language>("english")
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [chatSessions, setChatSessions] = useState<ChatSession[]>([])
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
   const t = useTranslation(currentLanguage)
+  const [user, setUser] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Check if API key is available
   const hasApiKey = !!process.env.NEXT_PUBLIC_GEMINI_API_KEY
 
   // Load language preference and chat sessions on mount
   useEffect(() => {
-    const savedLanguage = localStorage.getItem("sahayak-language") as Language
+    const savedLanguage = localStorage.getItem("sahayak-language") as Language;
     if (savedLanguage) {
-      setCurrentLanguage(savedLanguage)
+      setCurrentLanguage(savedLanguage);
     }
 
-    const savedSessions = localStorage.getItem("sahayak-chat-sessions")
-    if (savedSessions) {
-      const sessions = JSON.parse(savedSessions).map((session: any) => ({
-        ...session,
-        createdAt: new Date(session.createdAt),
-        updatedAt: new Date(session.updatedAt),
-        messages: session.messages.map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp),
-        })),
-      }))
-      setChatSessions(sessions)
-
-      // Load the most recent session
-      if (sessions.length > 0) {
-        const mostRecent = sessions[0]
-        setCurrentSessionId(mostRecent.id)
-        setMessages(mostRecent.messages)
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        // Fetch chat sessions from backend using UID
+        const sessions = await fetchChatSessions(firebaseUser.uid);
+        setChatSessions(sessions);
+        if (sessions.length > 0) {
+          setCurrentSessionId(sessions[0].id);
+          setMessages(sessions[0].messages);
+        }
       }
-    }
-
-    // Listen for language changes
-    const handleLanguageChange = (event: CustomEvent) => {
-      setCurrentLanguage(event.detail)
-    }
-
-    window.addEventListener("languageChange", handleLanguageChange as EventListener)
-    return () => window.removeEventListener("languageChange", handleLanguageChange as EventListener)
-  }, [])
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  const saveChatSessions = (sessions: ChatSession[]) => {
-    localStorage.setItem("sahayak-chat-sessions", JSON.stringify(sessions))
-    setChatSessions(sessions)
+  // Save chat session to Firestore
+  async function saveSessionToFirestore(session: ChatSession) {
+    const user = auth.currentUser;
+    if (!user) return;
+    await saveToLibrary({
+      type: 'ai-chat',
+      title: session.title,
+      content: JSON.stringify(session.messages),
+      metadata: {},
+      userId: user.uid,
+    });
   }
 
+  // Utility functions for backend chat session CRUD
+  function normalizeSession(session: any): ChatSession {
+    return {
+      ...session,
+      messages: Array.isArray(session.messages) ? session.messages : [],
+      updatedAt: session.updatedAt ? new Date(session.updatedAt) : null,
+      createdAt: session.createdAt ? new Date(session.createdAt) : null,
+    };
+  }
+  async function fetchChatSessions(uid: string) {
+    const res = await fetch(`http://localhost:5000/api/chat/${uid}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.map(normalizeSession);
+  }
+  async function saveChatSession(uid: string, session: ChatSession) {
+    await fetch(`http://localhost:5000/api/chat/${uid}/${session.id}` , {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(session),
+    });
+  }
+  async function updateChatSession(uid: string, sessionId: string, updateData: Partial<ChatSession>) {
+    await fetch(`http://localhost:5000/api/chat/${uid}/${sessionId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updateData),
+    });
+  }
+  async function deleteChatSession(uid: string, sessionId: string) {
+    await fetch(`http://localhost:5000/api/chat/${uid}/${sessionId}`, { method: 'DELETE' });
+  }
+
+  // Update saveChatSessions to also save to Firestore
+  const saveChatSessions = (sessions: ChatSession[]) => {
+    setChatSessions(sessions);
+    if (user && user.uid) {
+      // Save the current session to backend
+      const currentSession = sessions.find(s => s.id === currentSessionId);
+      if (currentSession) {
+        saveChatSession(user.uid, currentSession);
+      }
+    }
+  };
+
   const createNewSession = () => {
+    if (!user) return;
     const newSession: ChatSession = {
       id: Date.now().toString(),
       title: "New Conversation",
       messages: [],
       createdAt: new Date(),
       updatedAt: new Date(),
-    }
-
-    const updatedSessions = [newSession, ...chatSessions]
-    saveChatSessions(updatedSessions)
-    setCurrentSessionId(newSession.id)
-    setMessages([])
-
+    };
+    const updatedSessions = [newSession, ...chatSessions];
+    saveChatSessions(updatedSessions);
+    setCurrentSessionId(newSession.id);
+    setMessages([]);
     toast({
       title: "New conversation started",
       description: "You can now start a fresh conversation.",
-    })
-  }
+    });
+  };
 
   const loadSession = (sessionId: string) => {
-    const session = chatSessions.find((s) => s.id === sessionId)
+    const session = chatSessions.find((s) => s.id === sessionId);
     if (session) {
-      setCurrentSessionId(sessionId)
-      setMessages(session.messages)
+      setCurrentSessionId(sessionId);
+      setMessages(Array.isArray(session.messages) ? session.messages : []);
     }
-  }
+  };
 
-  const deleteSession = (sessionId: string) => {
-    const updatedSessions = chatSessions.filter((s) => s.id !== sessionId)
-    saveChatSessions(updatedSessions)
-
+  const deleteSession = async (sessionId: string) => {
+    if (!user) return;
+    // Call backend to delete session
+    await deleteChatSession(user.uid, sessionId);
+    const updatedSessions = chatSessions.filter((s) => s.id !== sessionId);
+    saveChatSessions(updatedSessions);
     if (currentSessionId === sessionId) {
       if (updatedSessions.length > 0) {
-        loadSession(updatedSessions[0].id)
+        loadSession(updatedSessions[0].id);
       } else {
-        createNewSession()
+        createNewSession();
       }
     }
-
     toast({
       title: "Conversation deleted",
       description: "The conversation has been removed.",
-    })
-  }
+    });
+  };
 
   const updateCurrentSession = (newMessages: Message[]) => {
-    if (!currentSessionId) return
-
+    if (!currentSessionId || !user || !user.uid) return;
     const updatedSessions = chatSessions.map((session) => {
       if (session.id === currentSessionId) {
         const updatedSession = {
           ...session,
           messages: newMessages,
           updatedAt: new Date(),
-        }
-
+        };
         // Update title based on first user message if it's still "New Conversation"
         if (session.title === "New Conversation" && newMessages.length > 0) {
-          const firstUserMessage = newMessages.find((msg) => msg.role === "user")
+          const firstUserMessage = newMessages.find((msg) => msg.role === "user");
           if (firstUserMessage) {
-            updatedSession.title = firstUserMessage.content.slice(0, 50) + "..."
+            updatedSession.title = firstUserMessage.content.slice(0, 50) + "...";
           }
         }
-
-        return updatedSession
+        // Save to backend
+        saveChatSession(user.uid, updatedSession);
+        return updatedSession;
       }
-      return session
-    })
-
-    saveChatSessions(updatedSessions)
-  }
+      return session;
+    });
+    saveChatSessions(updatedSessions);
+  };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return
-
+    if (!inputMessage.trim()) return;
     if (!hasApiKey) {
       toast({
         title: "API Key Required",
         description: "Please add your Gemini API key to use the AI assistant.",
         variant: "destructive",
-      })
-      return
+      });
+      return;
     }
-
+    setIsLoading(true);
+    setError(null);
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
       content: inputMessage.trim(),
       timestamp: new Date(),
+    };
+    // If no current session, create a new one
+    if (!currentSessionId || !currentSession) {
+      const newSession: ChatSession = {
+        id: Date.now().toString(),
+        title: userMessage.content.slice(0, 50) + (userMessage.content.length > 50 ? "..." : ""),
+        messages: [userMessage],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      const updatedSessions = [newSession, ...chatSessions];
+      setChatSessions(updatedSessions);
+      setCurrentSessionId(newSession.id);
+      setMessages([userMessage]);
+      // Save to backend
+      if (user && user.uid) {
+        await saveChatSession(user.uid, newSession);
+      }
+    } else {
+      const newMessages = [...messages, userMessage];
+      setMessages(newMessages);
     }
-
-    const newMessages = [...messages, userMessage]
-    setMessages(newMessages)
-    setInputMessage("")
-    setIsLoading(true)
-
+    setInputMessage("");
     try {
-      // The backend will handle the AI response generation
-      // For now, we'll just add a placeholder message
+      const aiResponse = await generateGeneralResponse(inputMessage.trim());
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "This is a placeholder response. The AI is currently offline.",
+        content: aiResponse,
         timestamp: new Date(),
-      }
-
-      const finalMessages = [...newMessages, assistantMessage]
-      setMessages(finalMessages)
-      updateCurrentSession(finalMessages)
-
+      };
+      const finalMessages = [...(currentSessionId && currentSession ? messages : []), userMessage, assistantMessage];
+      setMessages(finalMessages);
+      await updateCurrentSession(finalMessages);
       toast({
         title: "Response generated",
         description: "AI assistant has responded to your query.",
-      })
-    } catch (error) {
-      console.error("Error generating response:", error)
+      });
+    } catch (err: any) {
+      setError("Failed to generate response. Please try again.");
       toast({
         title: "Error",
         description: "Failed to generate response. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -238,7 +289,11 @@ export default function AIAssistantPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <Navigation user={user} />
+      <Navigation user={auth.currentUser ? {
+        name: auth.currentUser.displayName || '',
+        email: auth.currentUser.email || '',
+        avatar: auth.currentUser.photoURL || undefined
+      } : undefined} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with Font Size Selector */}
@@ -301,10 +356,10 @@ export default function AIAssistantPage() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{session.title}</p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {session.messages.length} messages
+                            {Array.isArray(session.messages) ? session.messages.length : 0} messages
                           </p>
                           <p className="text-xs text-gray-400 dark:text-gray-500">
-                            {session.updatedAt.toLocaleDateString()}
+                            {session.updatedAt ? new Date(session.updatedAt).toLocaleDateString() : ""}
                           </p>
                         </div>
                         <Button
@@ -396,7 +451,13 @@ export default function AIAssistantPage() {
                                 message.role === "user" ? "text-blue-100" : "text-gray-500 dark:text-gray-400"
                               }`}
                             >
-                              {message.timestamp.toLocaleTimeString()}
+                              {(() => {
+                                let dateObj = message.timestamp;
+                                if (!(dateObj instanceof Date)) {
+                                  dateObj = new Date(dateObj);
+                                }
+                                return dateObj.toLocaleTimeString();
+                              })()}
                             </div>
                           </div>
                         </div>

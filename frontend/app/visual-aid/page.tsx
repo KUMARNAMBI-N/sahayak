@@ -14,12 +14,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VisualAidGenerationLoader } from "@/components/loading-states"
 import { auth } from "@/lib/firebase";
 
-// Mock user data
-const user = {
-  name: "Priya Sharma",
-  email: "priya.sharma@school.edu",
-  avatar: "/placeholder.svg?height=32&width=32&text=PS",
-}
 
 export default function VisualAidPage() {
   const [topic, setTopic] = useState("")
@@ -152,7 +146,11 @@ export default function VisualAidPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100">
-      <Navigation user={user} />
+      <Navigation user={auth.currentUser ? {
+        name: auth.currentUser.displayName || '',
+        email: auth.currentUser.email || '',
+        avatar: auth.currentUser.photoURL || undefined
+      } : undefined} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* API Key Status */}

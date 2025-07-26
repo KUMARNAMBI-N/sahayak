@@ -45,12 +45,7 @@ const sampleTexts = {
   assam: "এটা সৰু গাঁৱত ৰাম নামৰ এজন কৃষক বাস কৰিছিল। তেওঁ অতি পৰিশ্ৰমী আছিল আৰু নিজৰ পথাৰত ভাল শস্য উৎপাদন কৰিছিল।",
 }
 
-// Mock user data
-const user = {
-  name: "Priya Sharma",
-  email: "priya.sharma@school.edu",
-  avatar: "/placeholder.svg?height=32&width=32&text=PS",
-}
+
 
 export default function GenerateStoryPage() {
   const [prompt, setPrompt] = useState("")
@@ -170,7 +165,11 @@ export default function GenerateStoryPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
-      <Navigation user={user} />
+      <Navigation user={auth.currentUser ? {
+        name: auth.currentUser.displayName || '',
+        email: auth.currentUser.email || '',
+        avatar: auth.currentUser.photoURL || undefined
+      } : undefined} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with Font Size Selector */}
