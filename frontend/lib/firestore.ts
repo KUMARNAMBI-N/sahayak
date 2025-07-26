@@ -14,7 +14,7 @@ import {
 
 export interface SavedItem {
   id?: string;
-  type: "story" | "worksheet" | "visual-aid" | "reading-assessment";
+  type: "story" | "worksheet" | "visual-aid" | "reading-assessment" | "ai-chat";
   title: string;
   content: string;
   metadata: Record<string, any>;

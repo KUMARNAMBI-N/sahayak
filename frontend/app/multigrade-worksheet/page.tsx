@@ -24,9 +24,10 @@ import { useToast } from "@/hooks/use-toast"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { FontSizeSelector } from "@/components/font-size-selector"
-import { generateWorksheet } from "@/lib/gemini"
+
 import { extractTextFromImage, extractTextFromPDF } from "@/lib/ocr"
-import { saveToLibrary } from "@/lib/firestore"
+import { generateWorksheet } from "@/lib/gemini"
+import { multigradeWorksheetAPI } from "@/lib/api";
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { WorksheetGenerationLoader } from "@/components/loading-states"
 import { auth } from "@/lib/firebase";
@@ -56,12 +57,6 @@ const subjects = [
   { value: "general", label: "General Knowledge" },
 ]
 
-// Mock user data
-const user = {
-  name: "Priya Sharma",
-  email: "priya.sharma@school.edu",
-  avatar: "/placeholder.svg?height=32&width=32&text=PS",
-}
 
 export default function MultigradeWorksheetPage() {
   const [content, setContent] = useState("")
@@ -208,12 +203,12 @@ export default function MultigradeWorksheetPage() {
     setGeneratedWorksheet("")
 
     try {
-      const worksheet = await generateWorksheet(finalContent, selectedGrade, selectedSubject)
-      setGeneratedWorksheet(worksheet)
+      const worksheet = await generateWorksheet(finalContent, selectedGrade, selectedSubject);
+      setGeneratedWorksheet(worksheet);
       toast({
         title: "Worksheet generated successfully!",
         description: `Grade ${selectedGrade} ${selectedSubject} worksheet has been created.`,
-      })
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to generate worksheet"
       setError(errorMessage)
@@ -245,11 +240,10 @@ export default function MultigradeWorksheetPage() {
       const user = auth.currentUser;
       const userId = user ? user.uid : "";
 
-      await saveToLibrary({
-        type: "worksheet",
+      await multigradeWorksheetAPI.create({
         title: `${gradeLabel} ${subjectLabel} Worksheet`,
-        content: generatedWorksheet,
-        metadata: {
+        worksheetData: {
+          content: generatedWorksheet,
           grade: selectedGrade,
           gradeLabel,
           subject: selectedSubject,
@@ -293,7 +287,11 @@ export default function MultigradeWorksheetPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <Navigation user={user} />
+      <Navigation user={auth.currentUser ? {
+        name: auth.currentUser.displayName || '',
+        email: auth.currentUser.email || '',
+        avatar: auth.currentUser.photoURL || undefined
+      } : undefined} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with Font Size Selector */}

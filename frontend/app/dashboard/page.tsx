@@ -19,14 +19,17 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react"
+import Sayahak from "@/public/sahayak_logo.png";
 import Link from "next/link"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { FontSizeSelector } from "@/components/font-size-selector"
+import { LanguageSelector } from "@/components/language-selector"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useTranslation, type Language } from "@/lib/localization"
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { useAuthRedirect } from '@/hooks/use-auth-redirect';
 
 type Activity = {
   id: string;
@@ -38,85 +41,75 @@ type Activity = {
 };
 
 // Custom hook to fetch user profile from API
-function useUserProfile() {
+function useUserProfile(uid: string) {
   const [user, setUser] = useState({ name: "", email: "", avatar: "", uid: "" });
   const [recentActivities, setRecentActivities] = useState<Activity[]>([]);
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          const res = await fetch(`http://localhost:5000/api/profile/${firebaseUser.uid}`);
-          if (res.ok) {
-            const data = await res.json();
-            setUser({
-              name: data.fullName || firebaseUser.displayName || "",
-              email: data.email || firebaseUser.email || "",
-              avatar: data.avatar || firebaseUser.photoURL || "/placeholder.svg",
-              uid: firebaseUser.uid,
-            });
-          } else {
-            setUser({
-              name: firebaseUser.displayName || "",
-              email: firebaseUser.email || "",
-              avatar: firebaseUser.photoURL || "/placeholder.svg",
-              uid: firebaseUser.uid,
-            });
-          }
-        } catch {
-          setUser({
-            name: firebaseUser.displayName || "",
-            email: firebaseUser.email || "",
-            avatar: firebaseUser.photoURL || "/placeholder.svg",
-            uid: firebaseUser.uid,
-          });
-        }
-        // Fetch recent activities from backend API
-        try {
-          const res = await fetch(`http://localhost:5000/api/profile/${firebaseUser.uid}/activities`);
-          if (res.ok) {
-            const activities = await res.json();
-            setRecentActivities(activities.slice(0, 5));
-          } else {
-            setRecentActivities([]);
-          }
-        } catch (err) {
-          console.error("Failed to fetch recent activities:", err);
-          setRecentActivities([]);
-        }
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-  return { ...user, recentActivities };
-}
-
-export default function DashboardPage() {
-  const [currentLanguage, setCurrentLanguage] = useState<Language>("english")
-  const t = useTranslation(currentLanguage)
-
-  const { name, email, avatar, recentActivities } = useUserProfile();
-  const user = { name, email, avatar };
   const [stats, setStats] = useState({
     storiesCreated: 0,
     worksheetsGenerated: 0,
     visualAids: 0,
     studentsHelped: 0,
+    chatUsageSeconds: 0,
   });
 
-  // Load language preference and listen for changes
   useEffect(() => {
-    const savedLanguage = localStorage.getItem("sahayak-language") as Language
-    if (savedLanguage) {
-      setCurrentLanguage(savedLanguage)
-    }
+    if (!uid) return;
 
-    const handleLanguageChange = (event: CustomEvent) => {
-      setCurrentLanguage(event.detail)
-    }
+    const fetchData = async () => {
+      try {
+        // Get Firebase ID token
+        const idToken = await auth.currentUser?.getIdToken();
+        if (!idToken) {
+          console.error('No ID token available');
+          return;
+        }
 
-    window.addEventListener("languageChange", handleLanguageChange as EventListener)
-    return () => window.removeEventListener("languageChange", handleLanguageChange as EventListener)
-  }, [])
+        const headers = {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json'
+        };
+
+        // Fetch profile
+        const profileResponse = await fetch(`http://localhost:5000/api/profile/${uid}`, { headers });
+        if (profileResponse.ok) {
+          const data = await profileResponse.json();
+          setUser({
+            name: data.fullName || "",
+            email: data.email || "",
+            avatar: data.avatar || "/placeholder.svg",
+            uid,
+          });
+        }
+
+        // Fetch recent activities
+        const activitiesResponse = await fetch(`http://localhost:5000/api/profile/${uid}/activities`, { headers });
+        if (activitiesResponse.ok) {
+          const activities = await activitiesResponse.json();
+          setRecentActivities(activities.slice(0, 5));
+        }
+
+        // Fetch dashboard stats
+        const statsResponse = await fetch(`http://localhost:5000/api/profile/${uid}/dashboard-stats`, { headers });
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          setStats(statsData);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
+    };
+
+    fetchData();
+  }, [uid]);
+
+  return { ...user, recentActivities, stats };
+}
+
+// Child component for authenticated dashboard content
+function DashboardContent({ uid, currentLanguage }: { uid: string, currentLanguage: Language }) {
+  const t = useTranslation(currentLanguage);
+  const { name, email, avatar, recentActivities, stats } = useUserProfile(uid);
+  const user = { name, email, avatar };
 
   // Check if API key is available
   const hasApiKey = !!process.env.NEXT_PUBLIC_GEMINI_API_KEY
@@ -131,6 +124,16 @@ export default function DashboardPage() {
       textColor: "text-purple-600",
       bgColor: "bg-purple-50 dark:bg-purple-900/20",
       borderColor: "border-purple-200 dark:border-purple-800",
+    },
+    {
+      title: t("lessonPlanner"),
+      description: "Plan detailed lessons with AI support",
+      icon: BookOpen,
+      href: "/lesson-planner",
+      color: "bg-pink-500",
+      textColor: "text-pink-600",
+      bgColor: "bg-pink-50 dark:bg-pink-900/20",
+      borderColor: "border-pink-200 dark:border-pink-800",
     },
     {
       title: t("generateStory"),
@@ -172,11 +175,16 @@ export default function DashboardPage() {
       bgColor: "bg-red-50 dark:bg-red-900/20",
       borderColor: "border-red-200 dark:border-red-800",
     },
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <Navigation user={user} />
+      <Navigation user={auth.currentUser ? {
+        name: auth.currentUser.displayName || '',
+        email: auth.currentUser.email || '',
+        avatar: auth.currentUser.photoURL || undefined
+      } : undefined} />
+
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex justify-between items-center mb-8">
@@ -190,7 +198,10 @@ export default function DashboardPage() {
               <p className="text-gray-600 dark:text-gray-300">{t("readyToCreate")}</p>
             </div>
           </div>
-          <FontSizeSelector />
+          <div className="flex items-center gap-4">
+            {/* <LanguageSelector /> */}
+            <FontSizeSelector />
+          </div>
         </div>
 
         {/* API Key Status */}
@@ -217,53 +228,68 @@ export default function DashboardPage() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium dark:text-white">{t("storiesCreated")}</CardTitle>
               <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            </CardHeader>
-            <CardContent>
+              </CardHeader>
+              <CardContent>
               <div className="text-2xl font-bold dark:text-white">{stats.storiesCreated}</div>
               <p className="text-xs text-muted-foreground dark:text-gray-400">
                 <span className="text-green-600 dark:text-green-400">+12%</span> from last month
-              </p>
-            </CardContent>
+                </p>
+              </CardContent>
           </Card>
 
           <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium dark:text-white">{t("worksheetsGenerated")}</CardTitle>
               <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
-            </CardHeader>
-            <CardContent>
+              </CardHeader>
+              <CardContent>
               <div className="text-2xl font-bold dark:text-white">{stats.worksheetsGenerated}</div>
               <p className="text-xs text-muted-foreground dark:text-gray-400">
                 <span className="text-green-600 dark:text-green-400">+8%</span> from last month
-              </p>
-            </CardContent>
+                </p>
+              </CardContent>
           </Card>
 
           <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium dark:text-white">{t("visualAids")}</CardTitle>
               <ImageIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-            </CardHeader>
-            <CardContent>
+              </CardHeader>
+              <CardContent>
               <div className="text-2xl font-bold dark:text-white">{stats.visualAids}</div>
               <p className="text-xs text-muted-foreground dark:text-gray-400">
                 <span className="text-green-600 dark:text-green-400">+15%</span> from last month
-              </p>
-            </CardContent>
+                </p>
+              </CardContent>
           </Card>
 
           <Card className="dark:bg-gray-800 dark:border-gray-700">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium dark:text-white">{t("studentsHelped")}</CardTitle>
               <Users className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            </CardHeader>
-            <CardContent>
+              </CardHeader>
+              <CardContent>
               <div className="text-2xl font-bold dark:text-white">{stats.studentsHelped}</div>
               <p className="text-xs text-muted-foreground dark:text-gray-400">
                 <span className="text-green-600 dark:text-green-400">+23%</span> from last month
+                </p>
+              </CardContent>
+          </Card>
+
+          {/* <Card className="dark:bg-gray-800 dark:border-gray-700">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium dark:text-white">Chat Usage Hours</CardTitle>
+              <Bot className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold dark:text-white">
+                {(stats.chatUsageSeconds ? (stats.chatUsageSeconds / 3600).toFixed(1) : "0.0")}
+              </div>
+              <p className="text-xs text-muted-foreground dark:text-gray-400">
+                Total hours spent using the AI Assistant
               </p>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -272,7 +298,13 @@ export default function DashboardPage() {
             <Card className="dark:bg-gray-800 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 dark:text-white">
-                  <Sparkles className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                  {/* <Sparkles className="h-5 w-5 text-indigo-600 dark:text-indigo-400" /> */}
+                  <img
+    src={Sayahak.src}
+    alt="Sahayak Logo"
+    className="h-10 w-10 object-contain"
+    style={{ minWidth: 40 }}
+  />
                   Quick Actions
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">
@@ -283,10 +315,12 @@ export default function DashboardPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {quickActions.map((action) => {
                     const Icon = action.icon
+                    // Add custom height for Lesson Planner
+                    const customHeight = action.title === "Lesson Planner" ? "h-[123px]" : "";
                     return (
                       <Link key={action.title} href={action.href}>
                         <div
-                          className={`p-4 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md border ${action.bgColor} ${action.borderColor} hover:scale-105`}
+                          className={`p-4 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md border ${action.bgColor} ${action.borderColor} hover:scale-105 ${customHeight}`}
                         >
                           <div className="flex items-start space-x-3">
                             <div className={`p-2 rounded-lg ${action.color}`}>
@@ -306,20 +340,20 @@ export default function DashboardPage() {
                   })}
                 </div>
               </CardContent>
-            </Card>
-          </div>
+          </Card>
+        </div>
 
           {/* Recent Activity */}
           <div>
             <Card className="dark:bg-gray-800 dark:border-gray-700">
-              <CardHeader>
+          <CardHeader>
                 <CardTitle className="flex items-center gap-2 dark:text-white">
                   <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   Recent Activity
                 </CardTitle>
                 <CardDescription className="dark:text-gray-300">Your latest created content</CardDescription>
-              </CardHeader>
-              <CardContent>
+          </CardHeader>
+          <CardContent>
                 <div className="space-y-4">
                   {recentActivities.length === 0 ? (
                     <p className="text-gray-500 dark:text-gray-400 text-center">No recent activity yet.</p>
@@ -341,8 +375,8 @@ export default function DashboardPage() {
                             <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
                           ) : (
                             <ImageIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                          )}
-                        </div>
+                      )}
+                    </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{activity.title}</p>
                           <div className="flex items-center space-x-2 mt-1">
@@ -356,17 +390,64 @@ export default function DashboardPage() {
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                             {activity.createdAt?.toMillis ? new Date(activity.createdAt.toMillis()).toLocaleString() : ""}
                           </p>
-                        </div>
-                      </div>
+                    </div>
+                  </div>
                     ))
                   )}
-                </div>
-              </CardContent>
-            </Card>
+            </div>
+          </CardContent>
+        </Card>
           </div>
         </div>
       </main>
       <Footer />
     </div>
-  )
+  );
+}
+
+export default function DashboardPage() {
+  useAuthRedirect();
+  const [currentLanguage, setCurrentLanguage] = useState<Language>("english")
+  
+  // Auth Guard
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [uid, setUid] = useState<string | null>(null);
+  const router = require('next/navigation').useRouter();
+
+  // Load language preference on mount
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem("sahayak-language") as Language;
+    if (savedLanguage && ["english", "hindi", "marathi", "malayalam", "tamil", "telugu", "kannada", "bengali", "assamese", "gujarati"].includes(savedLanguage)) {
+      setCurrentLanguage(savedLanguage);
+    }
+  }, []);
+
+  // Listen for language changes
+  useEffect(() => {
+    const handleLanguageChange = (event: CustomEvent) => {
+      setCurrentLanguage(event.detail);
+    };
+    
+    window.addEventListener("languageChange", handleLanguageChange as EventListener);
+    return () => window.removeEventListener("languageChange", handleLanguageChange as EventListener);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        router.replace("/login");
+      } else {
+        setUid(user.uid);
+        setCheckingAuth(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
+  if (checkingAuth || !uid) {
+    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+  }
+
+  // Only render dashboard content after authentication
+  return <DashboardContent uid={uid} currentLanguage={currentLanguage} />;
 }

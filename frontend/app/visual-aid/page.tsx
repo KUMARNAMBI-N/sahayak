@@ -8,18 +8,13 @@ import { Label } from "@/components/ui/label"
 import { Copy, Download, Loader2, ImageIcon, AlertCircle, Heart, Sparkles, CheckCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Navigation } from "@/components/navigation"
+
 import { generateImagePrompt } from "@/lib/gemini"
-import { saveToLibrary } from "@/lib/firestore"
+import { visualAidAPI } from "@/lib/api";
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { VisualAidGenerationLoader } from "@/components/loading-states"
 import { auth } from "@/lib/firebase";
 
-// Mock user data
-const user = {
-  name: "Priya Sharma",
-  email: "priya.sharma@school.edu",
-  avatar: "/placeholder.svg?height=32&width=32&text=PS",
-}
 
 export default function VisualAidPage() {
   const [topic, setTopic] = useState("")
@@ -68,17 +63,17 @@ export default function VisualAidPage() {
 
     try {
       // Generate image prompt using Gemini
-      const imagePrompt = await generateImagePrompt(topic)
-      setGeneratedDescription(imagePrompt)
+      const imagePrompt = await generateImagePrompt(topic);
+      setGeneratedDescription(imagePrompt);
 
       // Generate actual image (mock implementation)
-      const imageUrl = await generateImage(imagePrompt)
-      setGeneratedImageUrl(imageUrl)
+      const imageUrl = await generateImage(imagePrompt);
+      setGeneratedImageUrl(imageUrl);
 
       toast({
         title: "Visual aid generated successfully!",
         description: "Your educational diagram has been created.",
-      })
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to generate visual aid"
       setError(errorMessage)
@@ -107,11 +102,10 @@ export default function VisualAidPage() {
     try {
       const user = auth.currentUser;
       const userId = user ? user.uid : "";
-      await saveToLibrary({
-        type: "visual-aid",
+      await visualAidAPI.create({
         title: `Visual Aid: ${topic}`,
-        content: generatedDescription,
-        metadata: {
+        aidData: {
+          description: generatedDescription,
           topic: topic,
           imageUrl: generatedImageUrl,
           visualType: "diagram",
@@ -152,7 +146,11 @@ export default function VisualAidPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-100">
-      <Navigation user={user} />
+      <Navigation user={auth.currentUser ? {
+        name: auth.currentUser.displayName || '',
+        email: auth.currentUser.email || '',
+        avatar: auth.currentUser.photoURL || undefined
+      } : undefined} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* API Key Status */}

@@ -30,8 +30,9 @@ import { useToast } from "@/hooks/use-toast"
 import { Navigation } from "@/components/navigation"
 import { Footer } from "@/components/footer"
 import { FontSizeSelector } from "@/components/font-size-selector"
+
 import { analyzeReadingWithLanguage } from "@/lib/gemini"
-import { saveToLibrary } from "@/lib/firestore"
+import { readingAssessmentAPI } from "@/lib/api";
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ReadingAnalysisLoader } from "@/components/loading-states"
 import { useTranslation, type Language } from "@/lib/localization"
@@ -70,12 +71,7 @@ const sampleTexts = {
     "The sun rises in the east and sets in the west. It is the center of our solar system and all planets revolve around it. Life on Earth is possible because of sunlight. It provides us with heat and light that are essential for all living beings.",
 }
 
-// Mock user data
-const user = {
-  name: "Priya Sharma",
-  email: "priya.sharma@school.edu",
-  avatar: "/placeholder.svg?height=32&width=32&text=PS",
-}
+
 
 interface AnalysisResult {
   overallScore: number
@@ -344,13 +340,13 @@ export default function ReadingAssessmentPage() {
     setError("")
 
     try {
-      const result = await analyzeReadingWithLanguage(transcript, selectedLanguage, readingText)
-      setAnalysisResult(result)
+      const result = await analyzeReadingWithLanguage(transcript, selectedLanguage, readingText);
+      setAnalysisResult(result);
 
       toast({
         title: "Analysis complete!",
         description: "Reading performance has been analyzed successfully.",
-      })
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to analyze reading"
       setError(errorMessage)
@@ -372,25 +368,13 @@ export default function ReadingAssessmentPage() {
       const languageLabel = languages.find((lang) => lang.value === selectedLanguage)?.label
       const user = auth.currentUser;
       const userId = user ? user.uid : "";
-      await saveToLibrary({
-        type: "reading-assessment",
+      await readingAssessmentAPI.create({
         title: `Reading Assessment - ${languageLabel}`,
-        content: JSON.stringify(
-          {
-            originalText: readingText,
-            transcript: transcript,
-            analysis: analysisResult,
-            hasAudio: !!audioBlob,
-          },
-          null,
-          2,
-        ),
-        metadata: {
-          language: selectedLanguage,
-          languageLabel,
-          overallScore: analysisResult.overallScore,
-          wordsPerMinute: analysisResult.wordsPerMinute,
-          assessmentDate: new Date().toISOString(),
+        assessmentData: {
+          originalText: readingText,
+          transcript: transcript,
+          analysis: analysisResult,
+          hasAudio: !!audioBlob,
         },
         userId,
       })
@@ -434,7 +418,11 @@ export default function ReadingAssessmentPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-100 dark:from-gray-900 dark:to-gray-800">
-      <Navigation user={user} />
+      <Navigation user={auth.currentUser ? {
+        name: auth.currentUser.displayName || '',
+        email: auth.currentUser.email || '',
+        avatar: auth.currentUser.photoURL || undefined
+      } : undefined} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header with Font Size Selector */}

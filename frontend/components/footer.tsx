@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Sparkles, Mail, Phone, MapPin, Facebook, Twitter, Instagram, Youtube } from "lucide-react"
+import Sayahak from "@/public/sahayak_logo.png";
 
 export function Footer() {
   return (
@@ -9,8 +10,13 @@ export function Footer() {
           {/* Brand Section */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-indigo-600 p-2 rounded-lg">
-                <Sparkles className="h-6 w-6 text-white" />
+              <div className="p-2 rounded-lg">
+              <img
+    src={Sayahak.src}
+    alt="Sahayak Logo"
+    className="h-10 w-10 object-contain"
+    style={{ minWidth: 40 }}
+  />
               </div>
               <div>
                 <h3 className="text-xl font-bold">SAHAYAK</h3>

@@ -28,4 +28,37 @@ exports.saveSession = async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+};
+
+// Delete a chat session
+exports.deleteSession = async (req, res) => {
+  const { uid, sessionId } = req.params;
+  try {
+    const docRef = admin.firestore().collection('chatSessions').doc(sessionId);
+    const doc = await docRef.get();
+    if (!doc.exists || doc.data().uid !== uid) {
+      return res.status(404).json({ error: 'Session not found or unauthorized' });
+    }
+    await docRef.delete();
+    res.json({ message: 'Session deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Update a chat session (partial update)
+exports.updateSession = async (req, res) => {
+  const { uid, sessionId } = req.params;
+  const updateData = req.body;
+  try {
+    const docRef = admin.firestore().collection('chatSessions').doc(sessionId);
+    const doc = await docRef.get();
+    if (!doc.exists || doc.data().uid !== uid) {
+      return res.status(404).json({ error: 'Session not found or unauthorized' });
+    }
+    await docRef.set(updateData, { merge: true });
+    res.json({ message: 'Session updated' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 }; 
