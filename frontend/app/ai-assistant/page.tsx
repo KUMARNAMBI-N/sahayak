@@ -109,27 +109,80 @@ export default function AIAssistantPage() {
     };
   }
   async function fetchChatSessions(uid: string) {
-    const res = await fetch(`http://localhost:5000/api/chat/${uid}`);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.map(normalizeSession);
+    try {
+      const token = await user?.getIdToken();
+      const res = await fetch(`/api/chat/${uid}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!res.ok) {
+        console.error('Failed to fetch chat sessions:', res.statusText);
+        return [];
+      }
+      const data = await res.json();
+      return data.map(normalizeSession);
+    } catch (error) {
+      console.error('Error fetching chat sessions:', error);
+      return [];
+    }
   }
+
   async function saveChatSession(uid: string, session: ChatSession) {
-    await fetch(`http://localhost:5000/api/chat/${uid}/${session.id}` , {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(session),
-    });
+    try {
+      const token = await user?.getIdToken();
+      const res = await fetch(`/api/chat/${uid}/${session.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(session),
+      });
+      if (!res.ok) {
+        console.error('Failed to save chat session:', res.statusText);
+      }
+    } catch (error) {
+      console.error('Error saving chat session:', error);
+    }
   }
+
   async function updateChatSession(uid: string, sessionId: string, updateData: Partial<ChatSession>) {
-    await fetch(`http://localhost:5000/api/chat/${uid}/${sessionId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updateData),
-    });
+    try {
+      const token = await user?.getIdToken();
+      const res = await fetch(`/api/chat/${uid}/${sessionId}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+      if (!res.ok) {
+        console.error('Failed to update chat session:', res.statusText);
+      }
+    } catch (error) {
+      console.error('Error updating chat session:', error);
+    }
   }
+
   async function deleteChatSession(uid: string, sessionId: string) {
-    await fetch(`http://localhost:5000/api/chat/${uid}/${sessionId}`, { method: 'DELETE' });
+    try {
+      const token = await user?.getIdToken();
+      const res = await fetch(`/api/chat/${uid}/${sessionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!res.ok) {
+        console.error('Failed to delete chat session:', res.statusText);
+      }
+    } catch (error) {
+      console.error('Error deleting chat session:', error);
+    }
   }
 
   // Update saveChatSessions to also save to Firestore

@@ -80,9 +80,21 @@ function HistoryContent({ uid }: { uid: string }) {
 
   const loadItems = async () => {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to view your saved items.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const token = await user.getIdToken();
       const allItems = await historyAPI.getAllItems();
       setItems(allItems);
     } catch (error) {
+      console.error('Error loading items:', error);
       toast({
         title: "Failed to load items",
         description: "Could not load your saved items.",
@@ -113,6 +125,18 @@ function HistoryContent({ uid }: { uid: string }) {
 
   const handleDeleteItem = async (id: string, type: string) => {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to delete items.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const token = await user.getIdToken();
+      
       // Delete based on item type
       switch (type) {
         case 'story':
@@ -140,6 +164,7 @@ function HistoryContent({ uid }: { uid: string }) {
         description: "The item has been removed from your library.",
       })
     } catch (error) {
+      console.error('Error deleting item:', error);
       toast({
         title: "Delete failed",
         description: "Could not delete the item.",

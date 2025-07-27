@@ -55,7 +55,13 @@ export default function ProfilePage() {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) return;
       try {
-        const res = await fetch(`http://localhost:5000/api/profile/${user.uid}`);
+        const token = await user.getIdToken();
+        const res = await fetch(`/api/profile/${user.uid}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
         if (!res.ok) throw new Error("Failed to fetch profile");
         const data = await res.json();
         setProfileData({
@@ -82,9 +88,13 @@ export default function ProfilePage() {
     const user = auth.currentUser;
     if (!user) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/profile/${user.uid}`, {
+      const token = await user.getIdToken();
+      const res = await fetch(`/api/profile/${user.uid}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify(profileData),
       });
       if (!res.ok) throw new Error("Failed to update profile");

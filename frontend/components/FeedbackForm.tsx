@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { auth } from "../lib/firebase";
 
 interface FeedbackFormProps {
   userId: string;
@@ -25,9 +26,19 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      await fetch("http://localhost:5000/api/save-feedback", {
+      const user = auth.currentUser;
+      if (!user) {
+        console.error('No authenticated user');
+        return;
+      }
+
+      const token = await user.getIdToken();
+      const response = await fetch("/api/save-feedback", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify({
           userId,
           feature,
@@ -37,9 +48,15 @@ const FeedbackForm: React.FC<FeedbackFormProps> = ({
           comment,
         }),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit feedback');
+      }
+
       setLocalSubmitted(true);
       if (onSubmit) onSubmit();
     } catch (error) {
+      console.error('Error submitting feedback:', error);
       setLocalSubmitted(true);
       if (onSubmit) onSubmit();
     }

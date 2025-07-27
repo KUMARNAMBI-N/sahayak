@@ -125,11 +125,20 @@ export default function GenerateStoryPage() {
     try {
       const selectedLang = languages.find((lang) => lang.value === selectedLanguage)
       const user = auth.currentUser;
-      const userId = user ? user.uid : "";
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to save your story.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const token = await user.getIdToken();
       await generateStoryAPI.create({
         title: `Story: ${prompt.slice(0, 50)}${prompt.length > 50 ? "..." : ""}`,
         content: generatedStory,
-        userId,
+        userId: user.uid,
       })
 
       toast({
@@ -137,6 +146,7 @@ export default function GenerateStoryPage() {
         description: "The story has been saved to your library.",
       })
     } catch (error) {
+      console.error('Error saving story:', error);
       toast({
         title: "Save failed",
         description: "Failed to save story. Please try again.",

@@ -367,7 +367,16 @@ export default function ReadingAssessmentPage() {
     try {
       const languageLabel = languages.find((lang) => lang.value === selectedLanguage)?.label
       const user = auth.currentUser;
-      const userId = user ? user.uid : "";
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please log in to save your assessment.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const token = await user.getIdToken();
       await readingAssessmentAPI.create({
         title: `Reading Assessment - ${languageLabel}`,
         assessmentData: {
@@ -376,7 +385,7 @@ export default function ReadingAssessmentPage() {
           analysis: analysisResult,
           hasAudio: !!audioBlob,
         },
-        userId,
+        userId: user.uid,
       })
 
       toast({
@@ -384,6 +393,7 @@ export default function ReadingAssessmentPage() {
         description: "The reading assessment has been saved to your library.",
       })
     } catch (error) {
+      console.error('Error saving assessment:', error);
       toast({
         title: "Save failed",
         description: "Failed to save assessment. Please try again.",
